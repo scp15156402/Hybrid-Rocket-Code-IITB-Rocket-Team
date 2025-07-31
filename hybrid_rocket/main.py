@@ -10,6 +10,7 @@ from hybrid_rocket.solver import simulate_burn
 from hybrid_rocket.plots import plot_all
 from hybrid_rocket.export import export_simulation_data, print_summary
 
+
 def run():
     parser = argparse.ArgumentParser(description="Hybrid Rocket Motor Burn Simulation")
     parser.add_argument("--mdot_ox", type=float, default=0.05, help="Oxidizer mass flow rate (kg/s)")
@@ -23,7 +24,7 @@ def run():
     parser.add_argument("--pa", type=float, default=1e5, help="Ambient pressure (Pa)")
     parser.add_argument("--Ae", type=float, default=1e-4, help="Nozzle exit area (m^2)")
     parser.add_argument("--export", action="store_true", help="Export results to CSV")
-    
+
     args = parser.parse_args()
 
     results = simulate_burn(
@@ -39,15 +40,16 @@ def run():
         Ae=args.Ae,
     )
 
-    # Visualize
+    # Summary
+    print(print_summary(results))
+
+    # Plots
     plot_all(results["time"], results["thrust"], results["radius"], results["OF"], results["G_ox"])
 
-    # Summary
-    print_summary(results)
-
-    # Optional export
+    # Optional CSV export
     if args.export:
         export_simulation_data(results)
+
 
 if __name__ == "__main__":
     run()

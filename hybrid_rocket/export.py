@@ -11,7 +11,7 @@ import numpy as np
 
 def export_simulation_data(results: dict, filename: str = "simulation_results.csv"):
     '''
-    Exports time-series data (thrust, radius, OF, G_ox) to CSV.
+    Exports time-series data (thrust, radius, OF, G_ox, Isp) to CSV.
 
     Parameters
     ----------
@@ -25,7 +25,8 @@ def export_simulation_data(results: dict, filename: str = "simulation_results.cs
         'Thrust (N)': results['thrust'],
         'Port Radius (m)': results['radius'],
         'O/F Ratio': results['OF'],
-        'Oxidizer Mass Flux (kg/m^2/s)': results['G_ox']
+        'Oxidizer Mass Flux (kg/m^2/s)': results['G_ox'],
+        'Specific Impulse (s)': results.get('Isp', [np.nan]*len(results['time']))
     })
     df.to_csv(filename, index=False)
     print(f"[INFO] Exported simulation data to {filename}")
@@ -39,6 +40,7 @@ def print_summary(results: dict) -> str:
     avg_thrust = np.mean(results['thrust'])
     peak_thrust = np.max(results['thrust'])
     avg_OF = np.mean(results['OF'])
+    avg_isp = np.mean(results['Isp']) if 'Isp' in results else np.nan
 
     summary = f"""
 === SIMULATION SUMMARY ===
@@ -47,5 +49,6 @@ Total Impulse:       {total_impulse:.2f} Ns
 Average Thrust:      {avg_thrust:.2f} N
 Peak Thrust:         {peak_thrust:.2f} N
 Average O/F Ratio:   {avg_OF:.2f}
+Average Isp:         {avg_isp:.2f} s
 """
     return summary

@@ -2,7 +2,7 @@
 
 import streamlit as st
 from hybrid_rocket.solver import simulate_burn
-from hybrid_rocket.plots import plot_all
+from hybrid_rocket.plots import plot_all, plot_isp_vs_time
 from hybrid_rocket.export import print_summary
 
 st.set_page_config(layout="wide")
@@ -44,11 +44,15 @@ if st.sidebar.button("Run Simulation"):
 
     # Display summary
     st.subheader("📊 Simulation Summary")
-    st.text(print_summary(results))  # Could be redirected to return a string
+    st.text(print_summary(results))
 
     # Plots
     st.subheader("📈 Performance Plots")
     plot_all(results["time"], results["thrust"], results["radius"], results["OF"], results["G_ox"])
+
+    # Isp Plot
+    if "Isp" in results:
+        st.subheader("⚙️ Specific Impulse vs Time")
+        plot_isp_vs_time(results["time"], results["Isp"])
 else:
     st.info("Adjust parameters and click 'Run Simulation'.")
-

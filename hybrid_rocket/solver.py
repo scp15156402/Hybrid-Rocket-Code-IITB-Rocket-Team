@@ -21,7 +21,8 @@ def simulate_burn(
     pe: float = 1e5,
     pa: float = 1e5,
     Ae: float = 1e-4,
-    Ve: float = 1800.0
+    Ve: float = 1800.0,
+    r2_limit: float = None  # Optional radius limit (grain outer boundary)
 ):
     '''
     Runs a forward-time simulation of hybrid burn.
@@ -42,12 +43,14 @@ def simulate_burn(
         Total simulation time (s)
     pe, pa, Ae, Ve : float
         Nozzle exit pressure, ambient pressure, area, and velocity
+    r2_limit : float
+        Outer radius limit (m), simulation stops if radius exceeds this
 
     Returns
     -------
     dict : Simulation results history
     '''
-    times, r_hist, thrust_hist, OF_hist, G_ox_hist = [], [], [], [], []
+    times, r_hist, thrust_hist, OF_hist, G_ox_hist, Isp_hist = [], [], [], [], [], []
 
     radius = r1_init
     t = 0.0
@@ -59,6 +62,7 @@ def simulate_burn(
         mdot_total = mdot_ox + mdot_fuel
         OF = of_ratio(mdot_ox, mdot_fuel)
         T = thrust(mdot_total, Ve, pe, pa, Ae)
+        Isp = specific_impulse(T, mdot_total)
 
         # Record
         times.append(t)
@@ -66,15 +70,21 @@ def simulate_burn(
         thrust_hist.append(T)
         OF_hist.append(OF)
         G_ox_hist.append(G_ox)
+        Isp_hist.append(Isp)
 
         # Advance
         radius = update_port_radius(radius, r_dot, dt)
         t += dt
+
+        # Stop if port radius exceeds fuel outer radius
+        if r2_limit is not None and radius > r2_limit:
+            break
 
     return {
         'time': np.array(times),
         'radius': np.array(r_hist),
         'thrust': np.array(thrust_hist),
         'OF': np.array(OF_hist),
-        'G_ox': np.array(G_ox_hist)
+        'G_ox': np.array(G_ox_hist),
+        'Isp': np.array(Isp_hist)
     }

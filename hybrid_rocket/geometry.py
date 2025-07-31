@@ -52,3 +52,18 @@ def nozzle_profile_coords(L_conv, throat_len, L_div, r_inlet, r_throat, r_exit):
     x = np.array([0, L_conv, L_conv + throat_len, L_conv + throat_len + L_div])
     y = np.array([r_inlet, r_throat, r_throat, r_exit])
     return x, y
+
+
+def burning_surface_area(port_radius: float, grain_length: float) -> float:
+    """
+    Computes lateral burning surface area of grain.
+    """
+    return 2 * np.pi * port_radius * grain_length
+
+
+def total_motor_length(precomb, grain_len, postcomb, front_cap, retainer, tank_len, gap=0.0):
+    """
+    Computes full assembly length of motor + tank + caps.
+    All lengths in meters.
+    """
+    return precomb + grain_len + postcomb + front_cap + retainer + tank_len + gap

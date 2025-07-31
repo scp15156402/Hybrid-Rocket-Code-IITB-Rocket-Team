@@ -52,3 +52,29 @@ def total_motor_structure_mass(components: dict) -> float:
     Sum all component masses.
     '''
     return sum(components.values())
+
+
+def bolt_tensile_capacity(d_bolt: float, n_bolts: int, material: str, safety_factor: float) -> float:
+    """
+    Calculates total axial load capacity of all bolts.
+    Assumes circular cross section with tensile stress area.
+
+    Parameters
+    ----------
+    d_bolt : float
+        Nominal diameter of bolt (m).
+    n_bolts : int
+        Number of bolts.
+    material : str
+        Bolt material.
+    safety_factor : float
+        Design safety factor.
+
+    Returns
+    -------
+    float
+        Maximum total load bolts can withstand (N).
+    """
+    A_t = np.pi * (d_bolt / 2)**2
+    sigma_y = get_material_properties(material)['sigma_y']
+    return (sigma_y / safety_factor) * A_t * n_bolts

@@ -1,58 +1,58 @@
-# app.py
-
-import streamlit as st
+import os
+from flask import Flask, render_template, request, url_for
 from hybrid_rocket.solver import simulate_burn
-from hybrid_rocket.plots import plot_all, plot_isp_vs_time
 from hybrid_rocket.export import print_summary
+from hybrid_rocket.slider_config import slider_config
+from hybrid_rocket.plots import save_all_plots  # ✅ Now defined in plots.py
 
-st.set_page_config(layout="wide")
-st.title("🚀 Hybrid Rocket Motor Simulator")
+app = Flask(__name__)
 
-st.sidebar.header("Simulation Parameters")
+# Ensure plots directory exists
+PLOTS_DIR = os.path.join("static", "plots")
+os.makedirs(PLOTS_DIR, exist_ok=True)
 
-# Sliders and inputs
-mdot_ox = st.sidebar.slider("Oxidizer Mass Flow Rate (kg/s)", 0.01, 1.0, 0.05, 0.01)
-rho_fuel = st.sidebar.slider("Fuel Density (kg/m³)", 500, 1500, 930)
-r1 = st.sidebar.slider("Initial Port Radius (m)", 0.005, 0.05, 0.01)
-L = st.sidebar.slider("Fuel Grain Length (m)", 0.05, 0.5, 0.1)
-dt = st.sidebar.slider("Time Step (s)", 0.001, 0.1, 0.01)
-t_final = st.sidebar.slider("Burn Time (s)", 1.0, 10.0, 3.0)
+@app.route("/", methods=["GET", "POST"])
+def index():
+    summary = None
+    plot_urls = []
 
-# Optional nozzle parameters
-st.sidebar.subheader("Nozzle Parameters")
-Ve = st.sidebar.number_input("Exit Velocity Ve (m/s)", value=1800.0)
-pe = st.sidebar.number_input("Exit Pressure Pe (Pa)", value=1e5)
-pa = st.sidebar.number_input("Ambient Pressure Pa (Pa)", value=1e5)
-Ae = st.sidebar.number_input("Nozzle Exit Area Ae (m²)", value=1e-4)
+    if request.method == "POST":
+        try:
+            # Extract all slider values from the POST request
+            inputs = {key: float(request.form[key]) for key in slider_config}
 
-# Run button
-if st.sidebar.button("Run Simulation"):
-    results = simulate_burn(
-        mdot_ox=mdot_ox,
-        rho_fuel=rho_fuel,
-        r1_init=r1,
-        L_grain=L,
-        dt=dt,
-        t_final=t_final,
-        Ve=Ve,
-        pe=pe,
-        pa=pa,
-        Ae=Ae
+            # Run the rocket simulation
+            results = simulate_burn(
+                mdot_ox=inputs["mdot_ox"],
+                rho_fuel=inputs["rho_fuel"],
+                r1_init=inputs["r1"],
+                L_grain=inputs["L"],
+                dt=inputs["dt"],
+                t_final=inputs["t_final"],
+                Ve=inputs["Ve"],
+                pe=inputs["pe"],
+                pa=inputs["pa"],
+                Ae=inputs["Ae"]
+            )
+
+            # Generate summary
+            summary = print_summary(results)
+
+            # Generate and save plots, get back file paths
+            filepaths = save_all_plots(results, save_dir=PLOTS_DIR)
+
+            # Convert full file paths to relative URLs Flask can serve
+            plot_urls = [url_for("static", filename=os.path.relpath(path, "static")) for path in filepaths]
+
+        except Exception as e:
+            summary = f"Error: {e}"
+
+    return render_template(
+        "index.html",
+        slider_config=slider_config,
+        summary=summary,
+        plot_urls=plot_urls
     )
 
-    st.success("✅ Simulation complete!")
-
-    # Display summary
-    st.subheader("📊 Simulation Summary")
-    st.text(print_summary(results))
-
-    # Plots
-    st.subheader("📈 Performance Plots")
-    plot_all(results["time"], results["thrust"], results["radius"], results["OF"], results["G_ox"])
-
-    # Isp Plot
-    if "Isp" in results:
-        st.subheader("⚙️ Specific Impulse vs Time")
-        plot_isp_vs_time(results["time"], results["Isp"])
-else:
-    st.info("Adjust parameters and click 'Run Simulation'.")
+if __name__ == "__main__":
+    app.run(debug=True)

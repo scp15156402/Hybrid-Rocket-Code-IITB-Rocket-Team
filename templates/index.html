@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hybrid Rocket Simulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Hybrid Rocket Simulator</h1>
+
+        <form method="POST">
+            {% for key, config in slider_config.items() %}
+                <label for="{{ key }}">{{ config.label }}</label>
+                <input
+                    type="range"
+                    id="{{ key }}"
+                    name="{{ key }}"
+                    min="{{ config.min }}"
+                    max="{{ config.max }}"
+                    step="{{ config.step }}"
+                    value="{{ config.default }}"
+                    oninput="this.nextElementSibling.value = this.value"
+                    required
+                >
+                <output>{{ config.default }}</output>
+            {% endfor %}
+            <button type="submit">Run Simulation</button>
+        </form>
+
+        {% if summary %}
+            <h2>Simulation Summary</h2>
+            <pre>{{ summary }}</pre>
+        {% endif %}
+
+        {% if plot_urls %}
+            <h2>Performance Plots</h2>
+            <div class="plot-container">
+                {% for url in plot_urls %}
+                    <img src="{{ url }}" alt="Plot" class="plot-img">
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,99 +1,106 @@
-'''
+"""
 plots.py
 
 Visualization tools for hybrid rocket simulation results.
-Directly adapted from integrated_code_HRM(4)_omn.ipynb.
-'''
+Modified for use with Flask: saves plots to static/plots/ directory.
+"""
 
+import os
 import matplotlib.pyplot as plt
+from datetime import datetime
+
+# Directory where plots will be saved
+PLOT_DIR = "static/plots"
+os.makedirs(PLOT_DIR, exist_ok=True)
+
+
+def save_plot(fig, name_prefix):
+    """
+    Saves the given matplotlib figure to the static/plots directory
+    with a unique timestamped filename.
+    
+    Returns:
+        str: Relative path to the saved image.
+    """
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+    filename = f"{name_prefix}_{timestamp}.png"
+    path = os.path.join(PLOT_DIR, filename)
+    fig.savefig(path, bbox_inches="tight")
+    plt.close(fig)
+    return filename  # Return just the filename for use in url_for()
 
 
 def plot_thrust_vs_time(time, thrust):
-    plt.figure()
-    plt.plot(time, thrust, label='Thrust')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Thrust (N)')
-    plt.title('Thrust vs Time')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    fig, ax = plt.subplots()
+    ax.plot(time, thrust, label='Thrust')
+    ax.set(xlabel='Time (s)', ylabel='Thrust (N)', title='Thrust vs Time')
+    ax.grid(True)
+    ax.legend()
+    return save_plot(fig, "thrust")
 
 
 def plot_radius_vs_time(time, radius):
-    plt.figure()
-    plt.plot(time, radius, label='Port Radius')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Radius (m)')
-    plt.title('Port Radius vs Time')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    fig, ax = plt.subplots()
+    ax.plot(time, radius, label='Port Radius')
+    ax.set(xlabel='Time (s)', ylabel='Radius (m)', title='Port Radius vs Time')
+    ax.grid(True)
+    ax.legend()
+    return save_plot(fig, "radius")
 
 
 def plot_of_vs_time(time, of):
-    plt.figure()
-    plt.plot(time, of, label='O/F Ratio')
-    plt.xlabel('Time (s)')
-    plt.ylabel('O/F Ratio')
-    plt.title('O/F Ratio vs Time')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    fig, ax = plt.subplots()
+    ax.plot(time, of, label='O/F Ratio')
+    ax.set(xlabel='Time (s)', ylabel='O/F Ratio', title='O/F Ratio vs Time')
+    ax.grid(True)
+    ax.legend()
+    return save_plot(fig, "of")
 
 
 def plot_gox_vs_time(time, G_ox):
-    plt.figure()
-    plt.plot(time, G_ox, label='G_ox')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Oxidizer Mass Flux (kg/m^2/s)')
-    plt.title('Oxidizer Mass Flux vs Time')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    fig, ax = plt.subplots()
+    ax.plot(time, G_ox, label='G_ox')
+    ax.set(xlabel='Time (s)', ylabel='Oxidizer Mass Flux (kg/m²/s)', title='Oxidizer Mass Flux vs Time')
+    ax.grid(True)
+    ax.legend()
+    return save_plot(fig, "gox")
 
 
 def plot_isp_vs_time(time, isp):
-    plt.figure()
-    plt.plot(time, isp, label='Specific Impulse')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Isp (s)')
-    plt.title('Specific Impulse vs Time')
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    fig, ax = plt.subplots()
+    ax.plot(time, isp, label='Specific Impulse')
+    ax.set(xlabel='Time (s)', ylabel='Isp (s)', title='Specific Impulse vs Time')
+    ax.grid(True)
+    ax.legend()
+    return save_plot(fig, "isp")
 
 
-def plot_all(time, thrust, radius, of, G_ox):
-    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+def save_all_plots(results, save_dir=PLOT_DIR):
+    """
+    Wrapper to generate and save all relevant plots using the simulation results.
 
-    axes[0, 0].plot(time, thrust)
-    axes[0, 0].set_title('Thrust vs Time')
-    axes[0, 0].set_xlabel('Time (s)')
-    axes[0, 0].set_ylabel('Thrust (N)')
-    axes[0, 0].grid(True)
+    Args:
+        results (dict): Dictionary containing time-series data like thrust, radius, etc.
+        save_dir (str): Directory to save plots (default is static/plots)
 
-    axes[0, 1].plot(time, radius)
-    axes[0, 1].set_title('Port Radius vs Time')
-    axes[0, 1].set_xlabel('Time (s)')
-    axes[0, 1].set_ylabel('Radius (m)')
-    axes[0, 1].grid(True)
+    Returns:
+        list[str]: List of saved image filenames (for use with url_for)
+    """
+    time = results["time"]
+    thrust = results["thrust"]
+    radius = results["radius"]
+    of = results["of"]
+    G_ox = results["G_ox"]
+    isp = results.get("isp")  # Optional
 
-    axes[1, 0].plot(time, of)
-    axes[1, 0].set_title('O/F Ratio vs Time')
-    axes[1, 0].set_xlabel('Time (s)')
-    axes[1, 0].set_ylabel('O/F')
-    axes[1, 0].grid(True)
+    filenames = [
+        plot_thrust_vs_time(time, thrust),
+        plot_radius_vs_time(time, radius),
+        plot_of_vs_time(time, of),
+        plot_gox_vs_time(time, G_ox)
+    ]
 
-    axes[1, 1].plot(time, G_ox)
-    axes[1, 1].set_title('Oxidizer Mass Flux vs Time')
-    axes[1, 1].set_xlabel('Time (s)')
-    axes[1, 1].set_ylabel('G_ox (kg/m^2/s)')
-    axes[1, 1].grid(True)
+    if isp is not None:
+        filenames.append(plot_isp_vs_time(time, isp))
 
-    fig.tight_layout()
-    plt.show()
+    return filenames

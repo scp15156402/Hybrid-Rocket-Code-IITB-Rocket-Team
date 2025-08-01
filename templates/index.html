@@ -1,44 +1,73 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Hybrid Rocket Simulator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Hybrid Rocket Simulator</h1>
+        <header>
+            <h1>Hybrid Rocket Simulator</h1>
+        </header>
 
-        <form method="POST">
-            {% for key, config in slider_config.items() %}
-                <label for="{{ key }}">{{ config.label }}</label>
-                <input
-                    type="range"
-                    id="{{ key }}"
-                    name="{{ key }}"
-                    min="{{ config.min }}"
-                    max="{{ config.max }}"
-                    step="{{ config.step }}"
-                    value="{{ config.default }}"
-                    oninput="this.nextElementSibling.value = this.value"
-                    required
-                >
-                <output>{{ config.default }}</output>
-            {% endfor %}
-            <button type="submit">Run Simulation</button>
-        </form>
+        <section class="input-form">
+            <form method="POST">
+                {# Sliders #}
+                {% for key, config in slider_config.items() %}
+                    <div class="form-group">
+                        <label for="{{ key }}">{{ config.label }}</label>
+                        <input
+                            type="range"
+                            id="{{ key }}"
+                            name="{{ key }}"
+                            min="{{ config.min }}"
+                            max="{{ config.max }}"
+                            step="{{ config.step }}"
+                            value="{{ config.default }}"
+                            oninput="this.nextElementSibling.value = this.value"
+                            required
+                        >
+                        <output>{{ config.default }}</output>
+                    </div>
+                {% endfor %}
+
+                {# Dropdowns #}
+                {% for key, cfg in dropdown_config.items() %}
+                    <div class="form-group">
+                        <label for="{{ key }}">{{ cfg.label }}</label>
+                        <select id="{{ key }}" name="{{ key }}">
+                            {% for opt in cfg.options %}
+                                <option value="{{ opt }}"
+                                  {% if opt == cfg.default %}selected{% endif %}>
+                                  {{ opt }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="submit-btn">Run Simulation</button>
+            </form>
+        </section>
 
         {% if summary %}
-            <h2>Simulation Summary</h2>
-            <pre>{{ summary }}</pre>
+            <section class="summary-panel">
+                <h2>Simulation Summary</h2>
+                <pre>{{ summary }}</pre>
+            </section>
         {% endif %}
 
-        {% if plot_urls %}
-            <h2>Performance Plots</h2>
-            <div class="plot-container">
-                {% for url in plot_urls %}
-                    <img src="{{ url }}" alt="Plot" class="plot-img">
-                {% endfor %}
-            </div>
+        {% if plot_keys %}
+            <section class="plot-section">
+                <h2>Performance Plots</h2>
+                <div class="plot-container">
+                    {% for key in plot_keys %}
+                        <img src="{{ url_for('serve_plot', key=key) }}"
+                             alt="Performance Plot" class="plot-img">
+                    {% endfor %}
+                </div>
+            </section>
         {% endif %}
     </div>
 </body>

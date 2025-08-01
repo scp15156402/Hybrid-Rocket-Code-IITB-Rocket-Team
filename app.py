@@ -1,58 +1,73 @@
 import os
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, send_file
+from flask_caching import Cache
+
+# ✅ Absolute imports instead of relative
 from hybrid_rocket.solver import simulate_burn
 from hybrid_rocket.export import print_summary
-from hybrid_rocket.slider_config import slider_config
-from hybrid_rocket.plots import save_all_plots  # ✅ Now defined in plots.py
+from hybrid_rocket.slider_config import slider_config, dropdown_config
+from hybrid_rocket.plots import init_plot_cache, save_all_plots, get_cached_image
 
 app = Flask(__name__)
+app.config["CACHE_TYPE"] = "SimpleCache"
+app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
+cache = Cache(app)
 
-# Ensure plots directory exists
-PLOTS_DIR = os.path.join("static", "plots")
-os.makedirs(PLOTS_DIR, exist_ok=True)
+# Initialize the plotting cache
+init_plot_cache(app)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     summary = None
-    plot_urls = []
+    plot_keys = []
 
     if request.method == "POST":
         try:
-            # Extract all slider values from the POST request
+            cache.clear()  # flush old plots
+
+            # Read slider inputs
             inputs = {key: float(request.form[key]) for key in slider_config}
 
-            # Run the rocket simulation
+            # Read dropdown inputs
+            for key in dropdown_config:
+                inputs[key] = request.form[key]
+
+            # ✅ Call simulate_burn using correct arguments
             results = simulate_burn(
                 mdot_ox=inputs["mdot_ox"],
                 rho_fuel=inputs["rho_fuel"],
-                r1_init=inputs["r1"],
-                L_grain=inputs["L"],
-                dt=inputs["dt"],
-                t_final=inputs["t_final"],
-                Ve=inputs["Ve"],
-                pe=inputs["pe"],
-                pa=inputs["pa"],
-                Ae=inputs["Ae"]
+                r1=inputs["r1"],     # UI uses cm
+                L=inputs["L"]        # UI uses cm
             )
 
-            # Generate summary
+            # Generate summary text
             summary = print_summary(results)
 
-            # Generate and save plots, get back file paths
-            filepaths = save_all_plots(results, save_dir=PLOTS_DIR)
-
-            # Convert full file paths to relative URLs Flask can serve
-            plot_urls = [url_for("static", filename=os.path.relpath(path, "static")) for path in filepaths]
+            # Generate and cache plots
+            plot_keys = save_all_plots(results)
 
         except Exception as e:
             summary = f"Error: {e}"
+            plot_keys = []
 
     return render_template(
         "index.html",
         slider_config=slider_config,
+        dropdown_config=dropdown_config,
         summary=summary,
-        plot_urls=plot_urls
+        plot_keys=plot_keys
     )
+
+@app.route("/plot/<key>")
+def serve_plot(key):
+    """
+    Serve a cached plot image for the given cache key.
+    """
+    buf = get_cached_image(key)
+    if buf is None:
+        return "Plot not found", 404
+    buf.seek(0)
+    return send_file(buf, mimetype="image/png")
 
 if __name__ == "__main__":
     app.run(debug=True)

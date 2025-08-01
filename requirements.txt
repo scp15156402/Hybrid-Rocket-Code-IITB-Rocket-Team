@@ -1,5 +1,5 @@
+flask
+flask-caching
 numpy
-matplotlib
-scipy
 pandas
-ipywidgets
+matplotlib

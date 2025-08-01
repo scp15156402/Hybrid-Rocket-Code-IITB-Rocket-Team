@@ -2,105 +2,115 @@
 plots.py
 
 Visualization tools for hybrid rocket simulation results.
-Modified for use with Flask: saves plots to static/plots/ directory.
+Uses Flask-Caching + BytesIO for in-memory image caching.
 """
 
-import os
 import matplotlib.pyplot as plt
-from datetime import datetime
+from io import BytesIO
+from flask_caching import Cache
 
-# Directory where plots will be saved
-PLOT_DIR = "static/plots"
-os.makedirs(PLOT_DIR, exist_ok=True)
+cache: Cache = None  # Will be initialized from the Flask app
 
-
-def save_plot(fig, name_prefix):
+def init_plot_cache(app):
     """
-    Saves the given matplotlib figure to the static/plots directory
-    with a unique timestamped filename.
-    
+    Initializes Flask-Caching with SimpleCache.
+    This should be called once in app.py.
+    """
+    global cache
+    cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
+    cache.init_app(app)
+
+
+def _save_to_cache(fig, cache_key: str) -> str:
+    """
+    Save a matplotlib figure to a BytesIO buffer and store it in Flask cache.
+
     Returns:
-        str: Relative path to the saved image.
+        str: cache key (used to fetch via Flask route).
     """
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
-    filename = f"{name_prefix}_{timestamp}.png"
-    path = os.path.join(PLOT_DIR, filename)
-    fig.savefig(path, bbox_inches="tight")
+    buf = BytesIO()
+    fig.savefig(buf, format='png', bbox_inches="tight")
+    buf.seek(0)
     plt.close(fig)
-    return filename  # Return just the filename for use in url_for()
+    cache.set(cache_key, buf, timeout=300)  # Cache for 5 minutes
+    return cache_key
 
 
-def plot_thrust_vs_time(time, thrust):
+def plot_thrust_vs_time(time, thrust) -> str:
     fig, ax = plt.subplots()
     ax.plot(time, thrust, label='Thrust')
     ax.set(xlabel='Time (s)', ylabel='Thrust (N)', title='Thrust vs Time')
     ax.grid(True)
     ax.legend()
-    return save_plot(fig, "thrust")
+    return _save_to_cache(fig, "thrust_plot")
 
 
-def plot_radius_vs_time(time, radius):
+def plot_radius_vs_time(time, radius) -> str:
     fig, ax = plt.subplots()
     ax.plot(time, radius, label='Port Radius')
     ax.set(xlabel='Time (s)', ylabel='Radius (m)', title='Port Radius vs Time')
     ax.grid(True)
     ax.legend()
-    return save_plot(fig, "radius")
+    return _save_to_cache(fig, "radius_plot")
 
 
-def plot_of_vs_time(time, of):
+def plot_of_vs_time(time, of) -> str:
     fig, ax = plt.subplots()
     ax.plot(time, of, label='O/F Ratio')
     ax.set(xlabel='Time (s)', ylabel='O/F Ratio', title='O/F Ratio vs Time')
     ax.grid(True)
     ax.legend()
-    return save_plot(fig, "of")
+    return _save_to_cache(fig, "of_plot")
 
 
-def plot_gox_vs_time(time, G_ox):
+def plot_gox_vs_time(time, G_ox) -> str:
     fig, ax = plt.subplots()
     ax.plot(time, G_ox, label='G_ox')
-    ax.set(xlabel='Time (s)', ylabel='Oxidizer Mass Flux (kg/m²/s)', title='Oxidizer Mass Flux vs Time')
+    ax.set(xlabel='Time (s)', ylabel='Oxidizer Mass Flux (kg/m²/s)', title='G_ox vs Time')
     ax.grid(True)
     ax.legend()
-    return save_plot(fig, "gox")
+    return _save_to_cache(fig, "gox_plot")
 
 
-def plot_isp_vs_time(time, isp):
+def plot_isp_vs_time(time, isp) -> str:
     fig, ax = plt.subplots()
     ax.plot(time, isp, label='Specific Impulse')
     ax.set(xlabel='Time (s)', ylabel='Isp (s)', title='Specific Impulse vs Time')
     ax.grid(True)
     ax.legend()
-    return save_plot(fig, "isp")
+    return _save_to_cache(fig, "isp_plot")
 
 
-def save_all_plots(results, save_dir=PLOT_DIR):
+def save_all_plots(results: dict) -> list:
     """
-    Wrapper to generate and save all relevant plots using the simulation results.
-
-    Args:
-        results (dict): Dictionary containing time-series data like thrust, radius, etc.
-        save_dir (str): Directory to save plots (default is static/plots)
+    Generate all plots and store them in Flask's memory cache.
 
     Returns:
-        list[str]: List of saved image filenames (for use with url_for)
+        List of cache keys (used as identifiers for /plot/<cache_key> route).
     """
     time = results["time"]
     thrust = results["thrust"]
     radius = results["radius"]
     of = results["of"]
     G_ox = results["G_ox"]
-    isp = results.get("isp")  # Optional
+    isp = results.get("isp")
 
-    filenames = [
+    keys = [
         plot_thrust_vs_time(time, thrust),
         plot_radius_vs_time(time, radius),
         plot_of_vs_time(time, of),
-        plot_gox_vs_time(time, G_ox)
+        plot_gox_vs_time(time, G_ox),
     ]
-
     if isp is not None:
-        filenames.append(plot_isp_vs_time(time, isp))
+        keys.append(plot_isp_vs_time(time, isp))
+    return keys
 
-    return filenames
+
+def get_cached_image(cache_key: str) -> BytesIO | None:
+    """
+    Retrieves a BytesIO plot from the cache.
+
+    Returns:
+        BytesIO or None
+    """
+    return cache.get(cache_key)

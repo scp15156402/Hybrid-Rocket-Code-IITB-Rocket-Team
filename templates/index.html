@@ -11,63 +11,249 @@
             <h1>Hybrid Rocket Simulator</h1>
         </header>
 
-        <section class="input-form">
-            <form method="POST">
-                {# Sliders #}
-                {% for key, config in slider_config.items() %}
-                    <div class="form-group">
-                        <label for="{{ key }}">{{ config.label }}</label>
-                        <input
-                            type="range"
-                            id="{{ key }}"
-                            name="{{ key }}"
-                            min="{{ config.min }}"
-                            max="{{ config.max }}"
-                            step="{{ config.step }}"
-                            value="{{ config.default }}"
-                            oninput="this.nextElementSibling.value = this.value"
-                            required
-                        >
-                        <output>{{ config.default }}</output>
-                    </div>
+        <form method="POST">
+            {# I. Combustion Geometry & Fuel Parameters #}
+            <fieldset>
+                <legend>I. Combustion Geometry & Fuel</legend>
+                {% for key in ["r1", "r2", "L", "mdot_ox", "rho_fuel"] %}
+                {% set cfg = slider_config[key] %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="{{ key }}"
+                        name="{{ key }}"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values[key] }}"
+                        oninput="document.getElementById('{{ key }}_out').value = this.value"
+                        required
+                    >
+                    <output id="{{ key }}_out" for="{{ key }}">{{ current_values[key] }}</output>
+                </div>
                 {% endfor %}
+            </fieldset>
 
-                {# Dropdowns #}
+            {# II. Casing & Insulation #}
+            <fieldset>
+                <legend>II. Casing & Insulation</legend>
+                {% for key in ["safety_factor","insul_grain_thk","insul_prepost_thk","casing_wall_thk","pre_comb_len","post_comb_len"] %}
+                {% set cfg = slider_config[key] %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="{{ key }}"
+                        name="{{ key }}"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values[key] }}"
+                        oninput="document.getElementById('{{ key }}_out').value = this.value"
+                        required
+                    >
+                    <output id="{{ key }}_out" for="{{ key }}">{{ current_values[key] }}</output>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            {# III. Nozzle Geometry #}
+            <fieldset>
+                <legend>III. Nozzle Geometry</legend>
+                {% for key in ["converge_half_angle","throat_diameter","throat_length","diverge_half_angle"] %}
+                {% set cfg = slider_config[key] %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="{{ key }}"
+                        name="{{ key }}"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values[key] }}"
+                        oninput="document.getElementById('{{ key }}_out').value = this.value"
+                        required
+                    >
+                    <output id="{{ key }}_out" for="{{ key }}">{{ current_values[key] }}</output>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            {# IV. Retainer & Front Cap #}
+            <fieldset>
+                <legend>IV. Retainer & Front Cap</legend>
+                {% for key in ["retainer_length","retainer_inner_radius","frontcap_length"] %}
+                {% set cfg = slider_config[key] %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="{{ key }}"
+                        name="{{ key }}"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values[key] }}"
+                        oninput="document.getElementById('{{ key }}_out').value = this.value"
+                        required
+                    >
+                    <output id="{{ key }}_out" for="{{ key }}">{{ current_values[key] }}</output>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            {# V. Front Cap Bolts #}
+            <fieldset>
+                <legend>V. Front Cap Bolts</legend>
+                {% for key in ["frontcap_bolt_diameter","frontcap_num_bolts"] %}
+                {% set cfg = slider_config[key] %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="{{ key }}"
+                        name="{{ key }}"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values[key] }}"
+                        oninput="document.getElementById('{{ key }}_out').value = this.value"
+                        required
+                    >
+                    <output id="{{ key }}_out" for="{{ key }}">{{ current_values[key] }}</output>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            {# VI. Nozzle Retainer Bolts #}
+            <fieldset>
+                <legend>VI. Nozzle Retainer Bolts</legend>
+                {% for key in ["nozzle_bolt_diameter","nozzle_num_bolts"] %}
+                {% set cfg = slider_config[key] %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="{{ key }}"
+                        name="{{ key }}"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values[key] }}"
+                        oninput="document.getElementById('{{ key }}_out').value = this.value"
+                        required
+                    >
+                    <output id="{{ key }}_out" for="{{ key }}">{{ current_values[key] }}</output>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            {# VII. Oxidizer Tank #}
+            <fieldset>
+                <legend>VII. Oxidizer Tank</legend>
+                {% for key in ["ox_tank_safety_factor","ox_tank_outer_diameter","ox_tank_wall_thk","ox_tank_length","ox_tank_temp","ox_tank_frontcap_thk","ox_tank_backcap_thk"] %}
+                {% set cfg = slider_config[key] %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="{{ key }}"
+                        name="{{ key }}"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values[key] }}"
+                        oninput="document.getElementById('{{ key }}_out').value = this.value"
+                        required
+                    >
+                    <output id="{{ key }}_out" for="{{ key }}">{{ current_values[key] }}</output>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            {# VIII. Oxidizer Tank Bolts #}
+            <fieldset>
+                <legend>VIII. Oxidizer Tank Bolts</legend>
+                {% for key in ["ox_tank_bolt_diameter","ox_tank_num_bolts"] %}
+                {% set cfg = slider_config[key] %}
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="{{ key }}"
+                        name="{{ key }}"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values[key] }}"
+                        oninput="document.getElementById('{{ key }}_out').value = this.value"
+                        required
+                    >
+                    <output id="{{ key }}_out" for="{{ key }}">{{ current_values[key] }}</output>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            {# IX. Assembly Parameters #}
+            <fieldset>
+                <legend>IX. Assembly Parameters</legend>
+                {% set cfg = slider_config["motor_ox_gap"] %}
+                <div class="form-group">
+                    <label for="motor_ox_gap">{{ cfg.label }}</label>
+                    <input
+                        type="range"
+                        id="motor_ox_gap"
+                        name="motor_ox_gap"
+                        min="{{ cfg.min }}"
+                        max="{{ cfg.max }}"
+                        step="{{ cfg.step }}"
+                        value="{{ current_values['motor_ox_gap'] }}"
+                        oninput="document.getElementById('motor_ox_gap_out').value = this.value"
+                        required
+                    >
+                    <output id="motor_ox_gap_out" for="motor_ox_gap">{{ current_values['motor_ox_gap'] }}</output>
+                </div>
+            </fieldset>
+
+            {# Dropdowns #}
+            <fieldset>
+                <legend>Materials</legend>
                 {% for key, cfg in dropdown_config.items() %}
-                    <div class="form-group">
-                        <label for="{{ key }}">{{ cfg.label }}</label>
-                        <select id="{{ key }}" name="{{ key }}">
-                            {% for opt in cfg.options %}
-                                <option value="{{ opt }}"
-                                  {% if opt == cfg.default %}selected{% endif %}>
-                                  {{ opt }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="{{ key }}">{{ cfg.label }}</label>
+                    <select id="{{ key }}" name="{{ key }}">
+                        {% for opt in cfg.options %} 
+                        <option value="{{ opt }}" {% if opt == current_values[key] %}selected{% endif %}>
+                            {{ opt }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 {% endfor %}
+            </fieldset>
 
-                <button type="submit" class="submit-btn">Run Simulation</button>
-            </form>
-        </section>
+            <button type="submit" class="submit-btn">Run Simulation</button>
+        </form>
 
         {% if summary %}
-            <section class="summary-panel">
-                <h2>Simulation Summary</h2>
-                <pre>{{ summary }}</pre>
-            </section>
+        <section class="summary-panel">
+            <h2>Simulation Summary</h2>
+            <pre>{{ summary }}</pre>
+        </section>
         {% endif %}
 
         {% if plot_keys %}
-            <section class="plot-section">
-                <h2>Performance Plots</h2>
-                <div class="plot-container">
-                    {% for key in plot_keys %}
-                        <img src="{{ url_for('serve_plot', key=key) }}"
-                             alt="Performance Plot" class="plot-img">
-                    {% endfor %}
-                </div>
-            </section>
+        <section class="plot-section">
+            <h2>Performance Plots</h2>
+            <div class="plot-container">
+                {% for key in plot_keys %}
+                <img src="{{ url_for('serve_plot', key=key) }}"
+                     alt="Performance Plot" class="plot-img">
+                {% endfor %}
+            </div>
+        </section>
         {% endif %}
     </div>
 </body>

@@ -104,3 +104,41 @@ button.submit-btn:hover {
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
+
+
+/* Fieldset & Legend Styling */
+fieldset {
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 30px;
+    background-color: #fafafa;
+}
+
+legend {
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 0 10px;
+    color: #1e293b;
+}
+
+/* Dropdown styling */
+select {
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    margin-top: 4px;
+}
+
+/* Ensure form grid respects fieldsets */
+.input-form form {
+    display: block; /* revert to block so fieldsets stack naturally */
+}
+
+/* Adjust .form-group width for responsiveness */
+.form-group {
+    width: 100%;
+    max-width: 400px;
+}

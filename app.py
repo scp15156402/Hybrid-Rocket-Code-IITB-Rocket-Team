@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, request, send_file
 from flask_caching import Cache
 
-# ✅ Absolute imports instead of relative
+# ✅ Absolute imports
 from hybrid_rocket.solver import simulate_burn
 from hybrid_rocket.export import print_summary
 from hybrid_rocket.slider_config import slider_config, dropdown_config
@@ -13,37 +13,44 @@ app.config["CACHE_TYPE"] = "SimpleCache"
 app.config["CACHE_DEFAULT_TIMEOUT"] = 300  # 5 minutes
 cache = Cache(app)
 
-# Initialize the plotting cache
+# Initialize the in-memory plot cache (and default static plots)
 init_plot_cache(app)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    # Start with defaults for all controls
+    current_values = {k: v["default"] for k, v in slider_config.items()}
+    current_values.update({k: v["default"] for k, v in dropdown_config.items()})
+
     summary = None
     plot_keys = []
 
     if request.method == "POST":
         try:
-            cache.clear()  # flush old plots
+            # Clear old plot buffers
+            cache.clear()
 
-            # Read slider inputs
-            inputs = {key: float(request.form[key]) for key in slider_config}
+            # 1. Read all slider inputs (values are strings, convert to float)
+            for key in slider_config:
+                current_values[key] = float(request.form[key])
 
-            # Read dropdown inputs
+            # 2. Read dropdown selections
             for key in dropdown_config:
-                inputs[key] = request.form[key]
+                current_values[key] = request.form[key]
 
-            # ✅ Call simulate_burn using correct arguments
+            # 3. Run the burn simulation with the submitted values
             results = simulate_burn(
-                mdot_ox=inputs["mdot_ox"],
-                rho_fuel=inputs["rho_fuel"],
-                r1=inputs["r1"],     # UI uses cm
-                L=inputs["L"]        # UI uses cm
+                r1=current_values["r1"],            # cm
+                r2=current_values["r2"],            # cm
+                L=current_values["L"],              # cm
+                mdot_ox=current_values["mdot_ox"],  # g/s
+                rho_fuel=current_values["rho_fuel"] # kg/m³
             )
 
-            # Generate summary text
+            # 4. Generate textual summary
             summary = print_summary(results)
 
-            # Generate and cache plots
+            # 5. Generate & cache all plots
             plot_keys = save_all_plots(results)
 
         except Exception as e:
@@ -54,15 +61,13 @@ def index():
         "index.html",
         slider_config=slider_config,
         dropdown_config=dropdown_config,
+        current_values=current_values,
         summary=summary,
         plot_keys=plot_keys
     )
 
 @app.route("/plot/<key>")
 def serve_plot(key):
-    """
-    Serve a cached plot image for the given cache key.
-    """
     buf = get_cached_image(key)
     if buf is None:
         return "Plot not found", 404
@@ -70,4 +75,5 @@ def serve_plot(key):
     return send_file(buf, mimetype="image/png")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Disable the reloader on Windows to avoid socket/thread issues
+    app.run(debug=True, use_reloader=False)

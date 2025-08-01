@@ -1,3 +1,5 @@
+# hybrid_rocket/structure.py
+
 """
 structure.py
 
@@ -6,9 +8,9 @@ Extracted from integrated_code_HRM(4)_omn.ipynb (top-cell version only).
 """
 
 import numpy as np
-from .material_db import get_material_properties
-from .geometry import grain_volume
-from .constants import GRAVITY
+from hybrid_rocket.material_db import get_material_properties
+from hybrid_rocket.geometry import grain_volume
+from hybrid_rocket.constants import GRAVITY
 
 
 def mass_cylinder(d_outer: float, length: float, thickness: float, material: str) -> float:
@@ -72,6 +74,7 @@ def allowable_pressure(t: float, r_inner: float, material: str, safety_factor: f
         float : Allowable pressure (Pa)
     """
     sigma_y = get_material_properties(material)['sigma_y']
+    # Thin‐wall hoop stress formula with thickness correction (r_inner + 0.6 t)
     return (sigma_y / (2 * safety_factor)) * t / (r_inner + 0.6 * t)
 
 

@@ -1,3 +1,5 @@
+# hybrid_rocket/export.py
+
 """
 export.py
 
@@ -37,22 +39,23 @@ def print_summary(results: dict) -> str:
     Mirrors the full notebook output (~39 values).
     """
     try:
-        t = np.array(results['time'])
+        t      = np.array(results['time'])
         thrust = np.array(results['thrust'])
         radius = np.array(results['radius'])
-        of = np.array(results['of'])
-        gox = np.array(results['G_ox'])
-        isp = np.array(results.get('isp', [np.nan] * len(t)))
+        of     = np.array(results['of'])
+        gox    = np.array(results['G_ox'])
+        isp    = np.array(results.get('isp', [np.nan] * len(t)))
     except KeyError as e:
         return f"Simulation Summary\nError: Missing key '{e.args[0]}' in simulation results."
 
     if len(t) == 0:
         return "Simulation Summary\nError: Empty time-series data."
 
+    # Performance metrics
     total_impulse = np.trapz(thrust, t)
-    avg_thrust = np.mean(thrust)
-    max_thrust = np.max(thrust)
-    min_thrust = np.min(thrust)
+    avg_thrust    = np.mean(thrust)
+    max_thrust    = np.max(thrust)
+    min_thrust    = np.min(thrust)
 
     avg_OF = np.mean(of)
     max_OF = np.max(of)
@@ -62,8 +65,8 @@ def print_summary(results: dict) -> str:
     max_isp = np.max(isp)
     min_isp = np.min(isp)
 
-    final_radius = radius[-1]
-    delta_radius = final_radius - radius[0]
+    final_radius   = radius[-1]
+    delta_radius   = final_radius - radius[0]
 
     avg_gox = np.mean(gox)
     max_gox = np.max(gox)

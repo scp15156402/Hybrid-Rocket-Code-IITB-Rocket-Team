@@ -1,0 +1,799 @@
+#### IMPORTANT CODE HERE #####
+## IITBRT
+## Om Nunase
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from math import sqrt, pi, tan, radians
+import ipywidgets as widgets
+from IPython.display import display, clear_output
+from scipy.interpolate import interp1d, CubicSpline
+import matplotlib.patches as patches # Import patches for creating shapes
+import pandas as pd # Import pandas for tabular output
+from scipy.interpolate import griddata
+
+
+# === Constants ===
+g = 9.81 # gravitational acceleration (m/s²)
+R_univ = 8.314 # universal gas constant (J/mol·K)
+k = 1.33 # ratio of specific heats
+M = 0.02897 # default molar mass of exhaust (kg/mol)
+p_ambient = 1e5 # ambient pressure (Pa)
+
+
+# Regression-rate coefficients for paraffin/N₂O
+a = 0.1561e-3 # regression coefficient (m·s⁻¹·(kg·m⁻²·s¹)^–n)
+n = 0.5 # regression exponent
+
+
+# Densities
+rho_fuel = 900 # paraffin density (kg/m³)
+rho_graphite = 1800 # Graphite density (kg/m³)
+# Add material properties
+material_properties = {
+    'SS304': {
+        'rho': 8000, # kg/m³
+        'sigma_y': 205e6 # Pa
+    },
+    'Aluminum': {
+        'rho': 2700,
+        'sigma_y': 276e6
+    },
+    'Titanium Grade 5': {
+        'rho': 4430,
+        'sigma_y': 828e6
+    },
+    'Carbon Steel': {
+        'rho': 7850,
+        'sigma_y': 250e6
+    }
+}
+
+
+# New N₂O data (temperature in Kelvin) from the second cell
+n2o_temp_K = np.array([249,259,269,279,289,299,301,303,305,307,308,308.2,308.4,308.6,308.8,309,309.4])
+n2o_pressures = np.array([15.847,21.308,28.025,36.168,45.936,57.591,60.181,62.870,65.663,68.573,70.078,70.384,70.691,71.000,71.311,71.623,72.255]) # bar
+n2o_density = np.array([1014.9,973.32,927.62,876.03,815.00,734.79,713.98,690.07,661.16,622.45,594.69,587.72,579.98,571.22,561.02,548.57,505.57]) # kg/m³
+
+# Convert temperature to Celsius for spline interpolation
+n2o_temp_C = n2o_temp_K - 273.15
+
+# Cubic spline interpolators for N2O properties
+pressure_spline = CubicSpline(n2o_temp_C, n2o_pressures)
+density_spline = CubicSpline(n2o_temp_C, n2o_density)
+
+
+# === Temperature vs O/F interpolation ===
+OF_data = np.array([0.2, 1.0, 2.0, 3.0, 4.0, 6.0, 7.0, 8.0, 9.0, 10.0])
+T_data = np.array([1000, 1210, 1500, 1800, 2400, 3100, 3200, 3260, 3250, 3200])
+temp_interp = interp1d(OF_data, T_data, kind='cubic',
+                       bounds_error=False,
+                       fill_value=(T_data[0], T_data[-1]))
+
+def get_Tc(OF):
+    return float(temp_interp(OF))
+
+
+def solve_choked_pressure(mdot_total, A_t, R_spec, Tc):
+    """Invert the choked-flow relation to compute chamber pressure (Pa)."""
+    factor = sqrt(k/(R_spec*Tc)) * ((2/(k+1))**((k+1)/(2*(k-1))))
+    # Avoid division by zero
+    if factor == 0:
+        return 0
+    return mdot_total / (A_t * factor)
+
+
+
+def plot_motor_assembly(r1, r2_fuel, casing_inner_radius, t_wall, L_frontcap, pre_comb_cm, L_grain, post_comb_cm, L_nozzle, nozzle_profile, L_retainer_mm, r_retainer_inner_mm, insulation_grain_thickness, insulation_pre_post_thickness, ox_tank_D_outer_cm, ox_tank_t_mm, ox_tank_L_cm, ox_tank_frontcap_len_mm, ox_tank_backcap_len_mm, motor_ox_gap_mm, frontcap_bolt_diameter_mm, frontcap_num_bolts, nozzle_bolt_diameter_mm, nozzle_num_bolts, ox_tank_bolt_diameter_mm, ox_tank_num_bolts):
+    """Plots a 2D cross-section of the entire motor assembly including the oxidizer tank and bolts."""
+    fig, ax = plt.subplots(figsize=(20, 5)) # Wide figure
+
+    # Convert all dimensions to mm for plotting
+    r1_mm = r1 * 1000
+    r2_fuel_mm = r2_fuel * 1000
+    casing_inner_radius_mm = casing_inner_radius * 1000
+    t_wall_mm = t_wall * 1000
+    r_outer_mm = casing_inner_radius_mm + t_wall_mm
+    L_frontcap_mm = L_frontcap * 1000
+    pre_comb_mm = pre_comb_cm * 10
+    L_grain_mm = L_grain * 1000
+    post_comb_mm = post_comb_cm * 10
+    L_nozzle_mm = L_nozzle * 1000
+    L_retainer_mm = L_retainer_mm # Already in mm
+    r_retainer_inner_mm = r_retainer_inner_mm # Already in mm
+    insulation_grain_thickness_mm = insulation_grain_thickness * 1000
+    insulation_pre_post_thickness_mm = insulation_pre_post_thickness * 1000
+    insulation_outer_radius_mm = casing_inner_radius_mm
+
+    insulation_grain_inner_radius_mm = insulation_outer_radius_mm - insulation_grain_thickness_mm
+    insulation_pre_post_inner_radius_mm = insulation_outer_radius_mm - insulation_pre_post_thickness_mm
+
+    # Oxidizer tank dimensions
+    ox_tank_D_outer_mm = ox_tank_D_outer_cm * 10
+    ox_tank_t_mm_plot = ox_tank_t_mm
+    ox_tank_L_mm = ox_tank_L_cm * 10
+    ox_tank_r_outer_mm = ox_tank_D_outer_mm / 2
+    ox_tank_D_inner_mm = ox_tank_D_outer_mm - 2 * ox_tank_t_mm_plot
+    ox_tank_r_inner_mm = ox_tank_D_inner_mm / 2
+    ox_tank_frontcap_len_mm = ox_tank_frontcap_len_mm
+    ox_tank_backcap_len_mm = ox_tank_backcap_len_mm
+
+    ox_tank_L_total_mm = ox_tank_frontcap_len_mm + ox_tank_L_mm + ox_tank_backcap_len_mm
+
+    # Start axial points
+    x_ox_tank_start = 0
+    x_ox_tank_frontcap_end = x_ox_tank_start + ox_tank_frontcap_len_mm
+    x_ox_tank_casing_end = x_ox_tank_frontcap_end + ox_tank_L_mm
+    x_ox_tank_end = x_ox_tank_casing_end + ox_tank_backcap_len_mm
+
+    x_motor_start = x_ox_tank_end + motor_ox_gap_mm
+    x_frontcap_end = x_motor_start + L_frontcap_mm
+    x_precomb_end = x_frontcap_end + pre_comb_mm
+    x_grain_end = x_precomb_end + L_grain_mm
+    x_postcomb_end = x_grain_end + post_comb_mm
+    x_nozzle_start = x_postcomb_end
+    x_nozzle_end = x_nozzle_start + L_nozzle_mm
+    x_retainer_start = x_nozzle_end
+    x_retainer_end = x_retainer_start + L_retainer_mm
+    x_motor_end = x_retainer_end
+
+    # Draw all here as in original code...
+    # Drawing tank shell
+    ax.add_patch(patches.Rectangle((x_ox_tank_start, ox_tank_r_inner_mm), ox_tank_L_total_mm, ox_tank_t_mm_plot, facecolor='lightblue', edgecolor='black')) # Upper wall
+    ax.add_patch(patches.Rectangle((x_ox_tank_start, -ox_tank_r_outer_mm), ox_tank_L_total_mm, ox_tank_t_mm_plot, facecolor='lightblue', edgecolor='black')) # Lower wall
+    ax.add_patch(patches.Rectangle((x_ox_tank_start, -ox_tank_r_inner_mm), ox_tank_frontcap_len_mm, ox_tank_D_inner_mm, facecolor='cornflowerblue', edgecolor='black')) # Front Cap
+    ax.add_patch(patches.Rectangle((x_ox_tank_casing_end, -ox_tank_r_inner_mm), ox_tank_backcap_len_mm, ox_tank_D_inner_mm, facecolor='cornflowerblue', edgecolor='black')) # Back Cap
+
+    # Motor Casing
+    ax.add_patch(patches.Rectangle((x_motor_start, casing_inner_radius_mm), x_motor_end - x_motor_start, t_wall_mm, facecolor='silver', edgecolor='black')) # Upper
+    ax.add_patch(patches.Rectangle((x_motor_start, -r_outer_mm), x_motor_end - x_motor_start, t_wall_mm, facecolor='silver', edgecolor='black')) # Lower
+
+    # Front Cap
+    ax.add_patch(patches.Rectangle((x_motor_start, -casing_inner_radius_mm), L_frontcap_mm, 2 * casing_inner_radius_mm, facecolor='darkgray', edgecolor='black'))
+
+    # Fuel Grain
+    ax.add_patch(patches.Rectangle((x_precomb_end, r1_mm), L_grain_mm, r2_fuel_mm - r1_mm, facecolor='lightblue', edgecolor='black'))
+    ax.add_patch(patches.Rectangle((x_precomb_end, -r2_fuel_mm), L_grain_mm, r2_fuel_mm - r1_mm, facecolor='lightblue', edgecolor='black'))
+
+    # Insulation Pre-Post & Grain
+    ax.add_patch(patches.Rectangle((x_frontcap_end, insulation_pre_post_inner_radius_mm), pre_comb_mm, insulation_pre_post_thickness_mm, facecolor='peru', edgecolor='black'))
+    ax.add_patch(patches.Rectangle((x_frontcap_end, -insulation_outer_radius_mm), pre_comb_mm, insulation_pre_post_thickness_mm, facecolor='peru', edgecolor='black'))
+
+    ax.add_patch(patches.Rectangle((x_precomb_end, insulation_grain_inner_radius_mm), L_grain_mm, insulation_grain_thickness_mm, facecolor='sandybrown', edgecolor='black'))
+    ax.add_patch(patches.Rectangle((x_precomb_end, -insulation_outer_radius_mm), L_grain_mm, insulation_grain_thickness_mm, facecolor='sandybrown', edgecolor='black'))
+
+    ax.add_patch(patches.Rectangle((x_grain_end, insulation_pre_post_inner_radius_mm), post_comb_mm, insulation_pre_post_thickness_mm, facecolor='peru', edgecolor='black'))
+    ax.add_patch(patches.Rectangle((x_grain_end, -insulation_outer_radius_mm), post_comb_mm, insulation_pre_post_thickness_mm, facecolor='peru', edgecolor='black'))
+
+    # Nozzle
+    nozzle_x_abs = nozzle_profile['x'] + x_nozzle_start
+    ax.fill_between(nozzle_x_abs, nozzle_profile['y_upper'], casing_inner_radius_mm, color='gray', edgecolor='black')
+    ax.fill_between(nozzle_x_abs, nozzle_profile['y_lower'], -casing_inner_radius_mm, color='gray', edgecolor='black')
+
+    # Retainer
+    ax.add_patch(patches.Rectangle((x_retainer_start, r_retainer_inner_mm), L_retainer_mm, casing_inner_radius_mm - r_retainer_inner_mm, facecolor='darkgray', edgecolor='black'))
+    ax.add_patch(patches.Rectangle((x_retainer_start, -casing_inner_radius_mm), L_retainer_mm, casing_inner_radius_mm - r_retainer_inner_mm, facecolor='darkgray', edgecolor='black'))
+
+    # Bolts (several groups)
+    bolt_color = 'red'
+
+    # Frontcap bolts
+    frontcap_bolt_diam_plot = frontcap_bolt_diameter_mm
+    frontcap_bolt_len_plot = t_wall_mm
+    if frontcap_num_bolts > 0:
+        x_frontcap_bolt = x_motor_start + L_frontcap_mm / 2.0 - frontcap_bolt_diam_plot / 2.0
+        ax.add_patch(patches.Rectangle((x_frontcap_bolt, casing_inner_radius_mm), frontcap_bolt_diam_plot, frontcap_bolt_len_plot, facecolor=bolt_color, edgecolor='black'))
+        ax.add_patch(patches.Rectangle((x_frontcap_bolt, -casing_inner_radius_mm - frontcap_bolt_len_plot), frontcap_bolt_diam_plot, frontcap_bolt_len_plot, facecolor=bolt_color, edgecolor='black'))
+
+    # Nozzle retainer bolts
+    nozzle_bolt_diam_plot = nozzle_bolt_diameter_mm
+    nozzle_bolt_len_plot = t_wall_mm
+    if nozzle_num_bolts > 0:
+        x_retainer_bolt = x_retainer_start + L_retainer_mm / 2.0 - nozzle_bolt_diam_plot / 2.0
+        ax.add_patch(patches.Rectangle((x_retainer_bolt, casing_inner_radius_mm), nozzle_bolt_diam_plot, nozzle_bolt_len_plot, facecolor=bolt_color, edgecolor='black'))
+        ax.add_patch(patches.Rectangle((x_retainer_bolt, -casing_inner_radius_mm - nozzle_bolt_len_plot), nozzle_bolt_diam_plot, nozzle_bolt_len_plot, facecolor=bolt_color, edgecolor='black'))
+
+    # Oxidizer tank bolts
+    ox_tank_bolt_diam_plot = ox_tank_bolt_diameter_mm
+    ox_tank_front_bolt_len_plot = ox_tank_t_mm_plot
+    if ox_tank_num_bolts > 0:
+        x_ox_tank_front_bolt = x_ox_tank_start + ox_tank_frontcap_len_mm / 2.0 - ox_tank_bolt_diam_plot / 2.0
+        ax.add_patch(patches.Rectangle((x_ox_tank_front_bolt, ox_tank_r_inner_mm), ox_tank_bolt_diam_plot, ox_tank_front_bolt_len_plot, facecolor=bolt_color, edgecolor='black'))
+        ax.add_patch(patches.Rectangle((x_ox_tank_front_bolt, -ox_tank_r_inner_mm - ox_tank_front_bolt_len_plot), ox_tank_bolt_diam_plot, ox_tank_front_bolt_len_plot, facecolor=bolt_color, edgecolor='black'))
+        x_ox_tank_back_bolt = x_ox_tank_casing_end + ox_tank_backcap_len_mm / 2.0 - ox_tank_bolt_diam_plot / 2.0
+        ox_tank_back_bolt_len_plot = ox_tank_t_mm_plot
+        ax.add_patch(patches.Rectangle((x_ox_tank_back_bolt, ox_tank_r_inner_mm), ox_tank_bolt_diam_plot, ox_tank_back_bolt_len_plot, facecolor=bolt_color, edgecolor='black'))
+        ax.add_patch(patches.Rectangle((x_ox_tank_back_bolt, -ox_tank_r_inner_mm - ox_tank_back_bolt_len_plot), ox_tank_bolt_diam_plot, ox_tank_back_bolt_len_plot, facecolor=bolt_color, edgecolor='black'))
+
+    # Set plot limits and labels
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_title('Motor and Oxidizer Tank Assembly 2D Cross-Section (mm)')
+    ax.set_xlabel('Axial Length (mm)')
+    ax.set_ylabel('Radius (mm)')
+    ax.grid(True, linestyle='--', alpha=0.6)
+    max_radius = max(r_outer_mm, ox_tank_r_outer_mm)
+    ax.set_ylim(-max_radius * 1.5, max_radius * 1.5)
+    ax.set_xlim(x_ox_tank_start - 10, x_retainer_end + 10)
+
+    plt.show()
+
+
+
+
+# Load and create the molar mass interpolator function
+
+try:
+    molar_mass_df = pd.read_csv('molar_mass_data.csv')
+    molar_mass_interp = lambda p, of: griddata(
+        molar_mass_df[['Chamber Pressure', 'OF Ratio']].values,
+        molar_mass_df['M(Exit)'].values,
+        (p, of),
+        method='linear',
+        fill_value=M  # fallback molar mass
+    )
+    print("Molar mass interpolation is ready.")
+except FileNotFoundError:
+    print("molar_mass_data.csv not found. Using constant molar mass.")
+    molar_mass_interp = None
+
+
+
+
+
+def simulate(
+        r1_cm, r2_cm, grain_len_cm,
+        mdot_ox_gps,
+        insul_grain_thickness_mm, insul_pre_post_thickness_mm,
+        pre_comb_cm, post_comb_cm,
+        converge_deg, throat_d_mm, throat_len_mm, diverge_deg,
+        casing_safety_factor, casing_wall_thickness_mm,
+        retainer_len_mm, retainer_inner_r_mm,
+        casing_material, frontcap_material, retainer_material,
+        frontcap_len_mm,
+        ox_tank_material, ox_tank_safety_factor, ox_tank_D_outer_cm, ox_tank_t_mm, ox_tank_L_cm, ox_tank_temp_c, ox_tank_frontcap_len_mm, ox_tank_backcap_len_mm,
+        ox_tank_frontcap_material, ox_tank_backcap_material,
+        motor_ox_gap_mm,
+        text_out, plots_out
+    ):
+
+    # Unit conversions
+    r1 = r1_cm / 100
+    r2_fuel = r2_cm / 100
+    insulation_grain_thickness = insul_grain_thickness_mm / 1000
+    insulation_pre_post_thickness = insul_pre_post_thickness_mm / 1000
+    L_grain = grain_len_cm / 100
+    mdot_ox = mdot_ox_gps / 1000
+    d_throat = throat_d_mm / 1000
+    A_t = pi * (d_throat/2)**2
+    t_wall = casing_wall_thickness_mm / 1000
+
+    # Bolt parameters (assuming already set outside and updated here if needed)
+    frontcap_bolt_diameter_mm = frontcap_bolt_diameter_slider.value
+    frontcap_num_bolts = frontcap_num_bolts_slider.value
+
+    nozzle_bolt_diameter_mm = nozzle_bolt_diameter_slider.value
+    nozzle_num_bolts = nozzle_num_bolts_slider.value
+
+    ox_tank_bolt_diameter_mm = ox_tank_bolt_diameter_slider.value
+    ox_tank_num_bolts = ox_tank_num_bolts_slider.value
+
+    # Material properties
+    rho_casing = material_properties[casing_material]['rho']
+    sigma_y_casing = material_properties[casing_material]['sigma_y']
+    rho_frontcap = material_properties[frontcap_material]['rho']
+    rho_retainer = material_properties[retainer_material]['rho']
+
+    # Oxidizer tank calculations
+    ox_tank_D_outer = ox_tank_D_outer_cm / 100
+    ox_tank_t = ox_tank_t_mm / 1000
+    ox_tank_L = ox_tank_L_cm / 100
+    ox_tank_D_inner = ox_tank_D_outer - 2 * ox_tank_t
+    ox_tank_r_inner = ox_tank_D_inner / 2
+    ox_tank_V_inner = np.pi * (ox_tank_D_inner / 2)**2 * ox_tank_L
+    ox_tank_V_available = 0.8 * ox_tank_V_inner
+    rho_n2o = float(density_spline(ox_tank_temp_c))
+    mox_available = ox_tank_V_available * rho_n2o
+
+    ox_tank_yield_strength = material_properties[ox_tank_material]['sigma_y']
+    allowable_stress_ox_tank = ox_tank_yield_strength / (2 * ox_tank_safety_factor)
+    max_pressure_design_ox_tank = (allowable_stress_ox_tank * ox_tank_t) / (ox_tank_r_inner + 0.6 * ox_tank_t) if ox_tank_r_inner + 0.6 * ox_tank_t > 0 else float('inf')
+
+    # Time stepping and histories
+    dt = 0.001
+    t = 0.0
+    mox_used = 0.0
+    mfuel_used = 0.0
+    time_hist, thrust_hist, OF_hist, r_hist, Tc_hist, G_ox_hist, r_dot_hist, p_c_hist = [], [], [], [], [], [], [], []
+    low_pressure_warning = False
+    last_p_c = p_ambient
+
+    # Simulation loop
+    while (r1 < r2_fuel) and (mox_used < mox_available * 0.90):
+
+        G_ox = mdot_ox / (pi * r1**2)
+        r_dot = a * G_ox**n
+        mdot_f = 2 * pi * r1 * L_grain * rho_fuel * r_dot
+        mdot_total = mdot_ox + mdot_f
+        OF = mdot_ox / mdot_f if mdot_f > 1e-9 else 10.0
+        Tc = get_Tc(OF)
+
+        # Use molar mass interpolation if available
+        if molar_mass_interp is not None:
+            M_effective = float(molar_mass_interp(p_c_hist[-1] if p_c_hist else last_p_c, OF))  # Use last p_c or fallback
+        else:
+            M_effective = M
+
+        R_spec = R_univ / M_effective
+
+        p_c = solve_choked_pressure(mdot_total, A_t, R_spec, Tc)
+        if p_c < 2e5:
+            low_pressure_warning = True
+
+        v_e = sqrt((2*k/(k-1)) * R_spec * Tc * (1 - (p_ambient/p_c)**((k-1)/k))) if p_c > p_ambient and (k-1) != 0 else 0
+        thrust = mdot_total * v_e
+
+        time_hist.append(t)
+        thrust_hist.append(thrust)
+        OF_hist.append(OF)
+        r_hist.append(r1)
+        Tc_hist.append(Tc)
+        G_ox_hist.append(G_ox)
+        r_dot_hist.append(r_dot)
+        p_c_hist.append(p_c)
+
+        dr = r_dot * dt
+        t += dt
+        mox_used += mdot_ox * dt
+        mfuel_used += mdot_f * dt
+        r1 += dr
+        last_p_c = p_c
+
+    # Compute summary metrics
+    total_impulse = np.trapz(thrust_hist, time_hist) if time_hist else 0
+    burn_time = t
+    avg_thrust = total_impulse / burn_time if burn_time > 0 else 0
+    avg_OF = np.mean(OF_hist) if OF_hist else 0
+    final_pc = p_c_hist[-1] if p_c_hist else 0
+    max_pc = max(p_c_hist) if p_c_hist else 0
+
+    # Propellant consumption status
+    propellant_consumed_first = "Simulation ended due to reaching the end of the fuel grain."
+    if mox_used >= mox_available * 0.90:
+        propellant_consumed_first = "Reached 10% remaining oxidizer."
+    elif r1 >= r2_fuel:
+        propellant_consumed_first = "Reached the end of the fuel grain."
+
+    # Casing, Insulation dimensions
+    casing_inner_radius = max(r2_fuel + insulation_grain_thickness, r2_fuel + insulation_pre_post_thickness)
+    ID_casing = 2 * casing_inner_radius
+    OD_casing = ID_casing + 2 * t_wall
+
+    allowable_stress_casing = sigma_y_casing / (2 * casing_safety_factor)
+    max_pressure_design_casing = (allowable_stress_casing * t_wall) / (casing_inner_radius + 0.6 * t_wall) if casing_inner_radius + 0.6 * t_wall > 0 else float('inf')
+
+    force_on_front_cap = max_pc * pi * casing_inner_radius**2
+    force_on_ox_tank_endcap = max_pressure_design_ox_tank * pi * (ox_tank_r_inner)**2
+    force_on_nozzle_retainer = max_pc * A_t
+
+    # Bolt analysis
+    bolt_yield_strength_typical = 660e6
+    bolt_shear_yield_ratio = 0.6
+    bolt_safety_factor = 3.0
+    allowable_bolt_shear_stress = (bolt_yield_strength_typical * bolt_shear_yield_ratio) / bolt_safety_factor
+
+    frontcap_bolt_area_single = pi * (frontcap_bolt_diameter_mm / 2000)**2  # convert mm to m radius
+    frontcap_total_bolt_shear_area = frontcap_bolt_area_single * frontcap_num_bolts
+    frontcap_bolt_shear_stress = force_on_front_cap / frontcap_total_bolt_shear_area if frontcap_total_bolt_shear_area > 0 else float('inf')
+    frontcap_bolts_sufficient = frontcap_bolt_shear_stress < allowable_bolt_shear_stress
+    frontcap_bolt_sufficiency_message = "Front Cap Bolts appear sufficient." if frontcap_bolts_sufficient else "*** WARNING: Front Cap Bolts may be insufficient! ***"
+
+    nozzle_bolt_area_single = pi * (nozzle_bolt_diameter_mm / 2000)**2
+    nozzle_total_bolt_shear_area = nozzle_bolt_area_single * nozzle_num_bolts
+    nozzle_bolt_shear_stress = force_on_nozzle_retainer / nozzle_total_bolt_shear_area if nozzle_total_bolt_shear_area > 0 else float('inf')
+    nozzle_bolts_sufficient = nozzle_bolt_shear_stress < allowable_bolt_shear_stress
+    nozzle_bolt_sufficiency_message = "Nozzle Retainer Bolts appear sufficient." if nozzle_bolts_sufficient else "*** WARNING: Nozzle Retainer Bolts may be insufficient! ***"
+
+    ox_tank_bolt_area_single = pi * (ox_tank_bolt_diameter_mm / 2000)**2
+    ox_tank_total_bolt_shear_area = ox_tank_bolt_area_single * ox_tank_num_bolts
+    ox_tank_bolt_shear_stress = force_on_ox_tank_endcap / ox_tank_total_bolt_shear_area if ox_tank_total_bolt_shear_area > 0 else float('inf')
+    ox_tank_bolts_sufficient = ox_tank_bolt_shear_stress < allowable_bolt_shear_stress
+    ox_tank_bolt_sufficiency_message = "Ox Tank Bolts appear sufficient." if ox_tank_bolts_sufficient else "*** WARNING: Ox Tank Bolts may be insufficient! ***"
+
+    insulation_grain_inner_radius = casing_inner_radius - insulation_grain_thickness
+    insulation_pre_post_inner_radius = casing_inner_radius - insulation_pre_post_thickness
+
+    # Nozzle geometry calculations
+    r_throat = d_throat / 2
+    denom = ((k + 1) / 2)**(1 / (k - 1)) * ((p_ambient / max_pc)**(1 / k)) * np.sqrt((k + 1) / (k - 1) * (1 - (p_ambient / max_pc)**((k - 1) / k))) if max_pc > p_ambient and (k-1) != 0 else 0
+    A_e = A_t / denom if denom > 0 else 0
+    r_exit = sqrt(A_e / pi) if A_e > 0 else 0
+    L_div = (r_exit - r_throat) / tan(radians(diverge_deg)) if diverge_deg != 0 else 0
+    throat_len = throat_len_mm / 1000
+    L_conv = (insulation_pre_post_inner_radius - r_throat) / tan(radians(converge_deg)) if converge_deg != 0 else 0
+    L_nozzle = L_conv + throat_len + L_div
+
+    vol_nozzle_solid = (pi * casing_inner_radius**2 * L_nozzle -
+                     ((1/3) * pi * L_conv * (insulation_pre_post_inner_radius**2 + insulation_pre_post_inner_radius * r_throat + r_throat**2) +
+                      pi * r_throat**2 * throat_len +
+                      (1/3) * pi * L_div * (r_throat**2 + r_throat * r_exit + r_exit**2)))
+    mass_nozzle = vol_nozzle_solid * rho_graphite
+
+    # Component masses
+    L_retainer = retainer_len_mm / 1000
+    r_retainer_inner = retainer_inner_r_mm / 1000
+    r_retainer_outer = casing_inner_radius
+    mass_retainer = pi * L_retainer * (r_retainer_outer**2 - r_retainer_inner**2) * rho_retainer
+    L_frontcap = frontcap_len_mm / 1000
+    mass_frontcap = pi * casing_inner_radius**2 * L_frontcap * rho_frontcap
+    L_total = L_frontcap + pre_comb_cm/100 + L_grain + post_comb_cm/100 + L_nozzle + L_retainer
+    L_casing_body = max(0, L_total - L_frontcap - L_retainer)
+    mass_casing_body = (pi * (casing_inner_radius + t_wall)**2 * L_casing_body - pi * casing_inner_radius**2 * L_casing_body) * rho_casing
+    mfuel_geom = rho_fuel * pi * L_grain * (r2_fuel**2 - (r1_cm/100)**2)
+
+    ox_tank_density_mat = material_properties[ox_tank_material]['rho']
+    ox_tank_frontcap_density = material_properties[ox_tank_frontcap_material]['rho']
+    ox_tank_backcap_density = material_properties[ox_tank_backcap_material]['rho']
+
+    ox_tank_surface_area = np.pi * ox_tank_D_outer * ox_tank_L
+    ox_tank_volume_shell = ox_tank_surface_area * ox_tank_t
+    mass_ox_tank_shell = ox_tank_volume_shell * ox_tank_density_mat
+    mass_ox_tank_frontcap = pi * (ox_tank_D_inner/2)**2 * (ox_tank_frontcap_len_mm / 1000) * ox_tank_frontcap_density
+    mass_ox_tank_backcap = pi * (ox_tank_D_inner/2)**2 * (ox_tank_backcap_len_mm / 1000) * ox_tank_backcap_density
+    total_ox_tank_mass = mass_ox_tank_shell + mass_ox_tank_frontcap + mass_ox_tank_backcap
+
+    total_motor_structure_mass = mass_casing_body + mass_frontcap + mass_nozzle + mass_retainer
+    total_mass = total_motor_structure_mass + total_ox_tank_mass + mox_available + mfuel_geom
+    total_weight = total_mass * g
+    thrust_to_weight_ratio = avg_thrust / total_weight if total_weight > 0 else 0
+
+    # --- Output ---
+
+    with text_out:
+        clear_output(wait=True)
+
+        results_data = [
+            ("Thrust-to-Weight Ratio", f"{thrust_to_weight_ratio:.2f}"),
+            ("Burn Time", f"{burn_time:.2f} s"),
+            ("Total Impulse", f"{total_impulse:.1f} Ns"),
+            ("Average Thrust", f"{avg_thrust:.1f} N"),
+            ("Peak Thrust", f"{max(thrust_hist) if thrust_hist else 0:.1f} N"),
+            ("Average O/F", f"{avg_OF:.2f}"),
+            ("Peak Chamber Pressure", f"{max_pc/1e5:.2f} bar"),
+            ("Final Chamber Pressure", f"{final_pc/1e5:.2f} bar"),
+            ("Total Oxidizer Loaded (from tank)", f"{mox_available:.4f} kg"),
+            ("Total Fuel Available (by geometry)", f"{mfuel_geom:.4f} kg"),
+            ("Propellant Mass (consumed)", f"{mox_used + mfuel_used:.4f} kg"),
+            ("Propellant Consumed First", propellant_consumed_first),
+            ("Nozzle Mass", f"{mass_nozzle:.3f} kg"),
+            ("Calculated Total Nozzle Length", f"{L_nozzle*100:.2f} cm"),
+            ("Retainer Mass", f"{mass_retainer:.3f} kg"),
+            ("Casing Material", casing_material),
+            ("Casing Inner Diameter", f"{ID_casing*1000:.1f} mm"),
+            ("Casing Outer Diameter", f"{OD_casing*1000:.1f} mm"),
+            ("Casing Wall Thickness (Input)", f"{casing_wall_thickness_mm:.2f} mm"),
+            (f"Max Casing Pressure (YS/2, SF={casing_safety_factor:.1f})", f"{max_pressure_design_casing/1e5:.2f} bar"),
+            ("Casing Body Mass", f"{mass_casing_body:.3f} kg"),
+            ("Front Cap Mass", f"{mass_frontcap:.3f} kg"),
+            ("Total Motor Length", f"{L_total:.3f} m"),
+            ("Grain Insulation Inner Radius", f"{insulation_grain_inner_radius*1000:.1f} mm"),
+            ("Grain Insulation Thickness", f"{insulation_grain_thickness*1000:.2f} mm"),
+            ("Pre/Post Insulation Inner Radius", f"{insulation_pre_post_inner_radius*1000:.1f} mm"),
+            ("Pre/Post Insulation Thickness", f"{insulation_pre_post_thickness*1000:.2f} mm"),
+            ("Oxidizer Tank Body Material", ox_tank_material),
+            ("Oxidizer Tank Front Cap Material", ox_tank_frontcap_material),
+            ("Oxidizer Tank Back Cap Material", ox_tank_backcap_material),
+            ("Oxidizer Tank Outer Diameter", f"{ox_tank_D_outer_cm:.1f} cm"),
+            ("Oxidizer Tank Wall Thickness", f"{ox_tank_t_mm:.2f} mm"),
+            ("Oxidizer Tank Length", f"{ox_tank_L_cm:.1f} cm"),
+            ("Oxidizer Tank Mass (Shell + Caps)", f"{total_ox_tank_mass:.3f} kg"),
+            (f"Estimated N2O Mass Stored (80% Ullage @ {ox_tank_temp_c:.1f}°C)", f"{mox_available:.3f} kg"),
+            (f"N2O Saturation Pressure @ {ox_tank_temp_c:.1f}°C", f"{float(pressure_spline(ox_tank_temp_c)):.2f} bar"),
+            (f"Max Ox Tank Pressure (YS/2, SF={ox_tank_safety_factor:.1f})", f"{max_pressure_design_ox_tank/1e5:.2f} bar"),
+            ("Motor-Oxidizer Tank Gap", f"{motor_ox_gap_mm:.1f} mm"),
+            ("Total Motor Structure Mass", f"{total_motor_structure_mass:.3f} kg"),
+            ("Total Motor Mass (initial, incl. propellants & tank):", f"{total_mass:.3f} kg")
+        ]
+
+        results_df = pd.DataFrame(results_data, columns=["Metric", "Value"])
+        print("=== RESULTS ===")
+        display(results_df)
+
+        if max_pc > 40e5:
+            print("\n*** WARNING: Peak chamber pressure exceeds 40 bar! ***")
+        if low_pressure_warning:
+            print("\n*** WARNING: Chamber pressure dropped below 2 bar. Nozzle may not be choked.... ***")
+        print("\n" + frontcap_bolt_sufficiency_message)
+        print(nozzle_bolt_sufficiency_message)
+        print(ox_tank_bolt_sufficiency_message)
+
+
+    with plots_out:
+        clear_output(wait=True)
+
+        # Motor assembly plot
+        nozzle_profile_data = {
+            'x': np.array([0, L_conv, L_conv + throat_len, L_conv + throat_len + L_div]) * 1000,
+            'y_upper': np.array([insulation_pre_post_inner_radius, r_throat, r_throat, r_exit]) * 1000,
+            'y_lower': -np.array([insulation_pre_post_inner_radius, r_throat, r_throat, r_exit]) * 1000
+        }
+        plot_motor_assembly(
+            r1=r_hist[0] if r_hist else r1_cm/100,
+            r2_fuel=r2_fuel,
+            casing_inner_radius=casing_inner_radius,
+            t_wall=t_wall,
+            L_frontcap=L_frontcap,
+            pre_comb_cm=pre_comb_cm,
+            L_grain=L_grain,
+            post_comb_cm=post_comb_cm,
+            L_nozzle=L_nozzle,
+            nozzle_profile=nozzle_profile_data,
+            L_retainer_mm=retainer_len_mm,
+            r_retainer_inner_mm=retainer_inner_r_mm,
+            insulation_grain_thickness=insulation_grain_thickness,
+            insulation_pre_post_thickness=insulation_pre_post_thickness,
+            ox_tank_D_outer_cm=ox_tank_D_outer_cm,
+            ox_tank_t_mm=ox_tank_t_mm,
+            ox_tank_L_cm=ox_tank_L_cm,
+            ox_tank_frontcap_len_mm=ox_tank_frontcap_len_mm,
+            ox_tank_backcap_len_mm=ox_tank_backcap_len_mm,
+            motor_ox_gap_mm=motor_ox_gap_mm,
+            frontcap_bolt_diameter_mm=frontcap_bolt_diameter_mm,
+            frontcap_num_bolts=frontcap_num_bolts,
+            nozzle_bolt_diameter_mm=nozzle_bolt_diameter_mm,
+            nozzle_num_bolts=nozzle_num_bolts,
+            ox_tank_bolt_diameter_mm=ox_tank_bolt_diameter_mm,
+            ox_tank_num_bolts=ox_tank_num_bolts
+        )
+
+        # Performance plots
+        fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(12, 6))
+        plots = [
+            ("Thrust (N)", thrust_hist),
+            ("Radius (m)", r_hist),
+            ("O/F Ratio", OF_hist),
+            ("G_ox (kg/m²/s)", G_ox_hist),
+            ("Temperature (K)", Tc_hist),
+            ("Chamber Pressure (bar)", [p/1e5 for p in p_c_hist])
+        ]
+
+        for ax, (label, data) in zip(axes.flat, plots):
+            ax.plot(time_hist, data if any(data) else [0])
+            ax.set_title(label)
+            ax.grid(True)
+
+        plt.tight_layout()
+        plt.show()
+
+        # Nozzle Shape Plot
+        fig_nozzle, ax_nozzle = plt.subplots(figsize=(6, 6))
+        x_nozzle_inner = np.array([0, L_conv, L_conv + throat_len, L_conv + throat_len + L_div])
+        y_nozzle_upper_inner = np.array([insulation_pre_post_inner_radius, r_throat, r_throat, r_exit])
+        stock_x = np.array([0, L_nozzle, L_nozzle, 0, 0]) * 1000
+        stock_y = np.array([-casing_inner_radius, -casing_inner_radius, casing_inner_radius, casing_inner_radius, -casing_inner_radius]) * 1000
+        ax_nozzle.plot(stock_x, stock_y, 'k--', linewidth=1, label='Graphite Stock Outline')
+        ax_nozzle.plot(x_nozzle_inner * 1000, y_nozzle_upper_inner * 1000, 'k-', linewidth=2, label='Machined Profile')
+        ax_nozzle.plot(x_nozzle_inner * 1000, -y_nozzle_upper_inner * 1000, 'k-', linewidth=2)
+        ax_nozzle.fill_between(stock_x[:2], stock_y[:2], stock_y[2:4], color='lightgray', zorder=0)
+        ax_nozzle.fill_between(x_nozzle_inner*1000, y_nozzle_upper_inner*1000, -y_nozzle_upper_inner*1000, color='white', zorder=1)
+        ax_nozzle.set_aspect('equal', adjustable='box')
+        ax_nozzle.set_title("Nozzle 2D Cross-Section (mm)")
+        ax_nozzle.set_xlabel("Axial Length (mm)")
+        ax_nozzle.set_ylabel("Radius (mm)")
+        ax_nozzle.grid(True, alpha=0.3)
+        plt.show()
+
+
+
+
+
+# === UI Sliders ===
+
+r1_slider = widgets.FloatSlider(value=0.7, min=0.1, max=4.0, step=0.1, description='r1 (cm)')
+r2_slider = widgets.FloatSlider(value=1.9, min=1.0, max=10.0, step=0.1, description='r2 Fuel (cm)')
+grain_slider = widgets.FloatSlider(value=6.0, min=1.0, max=50.0, step=0.1, description='Grain Len (cm)')
+mdot_slider = widgets.FloatSlider(value=47.0, min=0.0, max=3000.0, step=47.0, description='mdot_ox (g/s)')
+
+insul_grain_thickness_slider = widgets.FloatSlider(value=2.5, min=0.0, max=10.0, step=0.1, description='Insul Grain (mm)')
+insul_pre_post_thickness_slider = widgets.FloatSlider(value=3.0, min=0.0, max=10.0, step=0.1, description='Insul Pre/Post (mm)')
+pre_slider = widgets.FloatSlider(value=3.0, min=0.0, max=10.0, step=0.1, description='Pre-comb (cm)')
+post_slider = widgets.FloatSlider(value=3.0, min=0.0, max=20.0, step=0.1, description='Post-comb (cm)')
+conv_slider = widgets.FloatSlider(value=45, min=10, max=60, step=1, description='Converge (°)')
+throat_d_slider = widgets.FloatSlider(value=6.0, min=4.0, max=40.0, step=0.1, description='Throat D (mm)')
+throat_l_slider = widgets.FloatSlider(value=7, min=5, max=50, step=0.1, description='Throat Len (mm)')
+div_slider = widgets.FloatSlider(value=15, min=5, max=30, step=1, description='Diverge (°)')
+safety_slider = widgets.FloatSlider(value=2.0, min=1.5, max=3.0, step=0.1, description='Casing SF')
+casing_wall_thickness_slider = widgets.FloatSlider(value=3.0, min=1.0, max=20.0, step=0.1, description='Casing Wall (mm)')
+retainer_len_slider = widgets.FloatSlider(value=10.0, min=5.0, max=30.0, step=0.1, description='Retainer Len (mm)')
+retainer_inner_r_slider = widgets.FloatSlider(value=20.0, min=10.0, max=50.0, step=0.1, description='Retainer Inner R (mm)')
+frontcap_len_slider = widgets.FloatSlider(value=20.0, min=5.0, max=50.0, step=0.1, description='Front Cap Len (mm)')
+
+casing_material_dropdown = widgets.Dropdown(options=material_properties.keys(), description='Casing Mat:')
+frontcap_material_dropdown = widgets.Dropdown(options=material_properties.keys(), description='Front Cap Mat:')
+retainer_material_dropdown = widgets.Dropdown(options=material_properties.keys(), description='Retainer Mat:')
+
+ox_tank_material_dropdown = widgets.Dropdown(
+    options=material_properties.keys(),
+    value='SS304',
+    description='Ox Tank Body Mat:',
+    layout=widgets.Layout(width='300px')
+)
+
+ox_tank_frontcap_material_dropdown = widgets.Dropdown(
+    options=material_properties.keys(),
+    value='SS304',
+    description='Ox Tank Front Cap Mat:',
+    layout=widgets.Layout(width='300px')
+)
+
+ox_tank_backcap_material_dropdown = widgets.Dropdown(
+    options=material_properties.keys(),
+    value='SS304',
+    description='Ox Tank Back Cap Mat:',
+    layout=widgets.Layout(width='300px')
+)
+
+ox_tank_safety_slider = widgets.FloatSlider(
+    value=1.5,
+    min=1.0,
+    max=3.0,
+    step=0.1,
+    description='Ox Tank SF:',
+    layout=widgets.Layout(width='400px')
+)
+
+ox_tank_diameter_slider = widgets.FloatSlider(
+    value=10.0,
+    min=2.0,
+    max=50.0,
+    step=0.5,
+    description='Ox Tank Outer D (cm):',
+    layout=widgets.Layout(width='400px'),
+    disabled=True
+)
+
+ox_tank_thickness_slider = widgets.FloatSlider(
+    value=3.5,
+    min=0.1,
+    max=10.0,
+    step=0.1,
+    description='Ox Tank Wall (mm):',
+    layout=widgets.Layout(width='400px')
+)
+
+ox_tank_length_slider = widgets.FloatSlider(
+    value=30.0,
+    min=5.0,
+    max=200.0,
+    step=0.1,
+    description='Ox Tank Len (cm):',
+    layout=widgets.Layout(width='400px')
+)
+
+ox_tank_temperature_slider = widgets.FloatSlider(
+    value=25.0,
+    min=-24.0,
+    max=35.0,
+    step=0.5,
+    description='Ox Tank Temp (°C):',
+    layout=widgets.Layout(width='400px')
+)
+
+ox_tank_frontcap_len_slider = widgets.FloatSlider(
+    value=10.0,
+    min=1.0,
+    max=50.0,
+    step=0.1,
+    description='Ox Tank Front Cap (mm):',
+    layout=widgets.Layout(width='400px')
+)
+
+ox_tank_backcap_len_slider = widgets.FloatSlider(
+    value=10.0,
+    min=1.0,
+    max=50.0,
+    step=0.1,
+    description='Ox Tank Back Cap (mm):',
+    layout=widgets.Layout(width='400px')
+)
+
+motor_ox_gap_slider = widgets.FloatSlider(
+    value=0.0,
+    min=0.0,
+    max=100.0,
+    step=1.0,
+    description='Motor-Ox Gap (mm):',
+    layout=widgets.Layout(width='400px')
+)
+
+frontcap_bolt_diameter_slider = widgets.FloatSlider(value=6.0, min=2.0, max=20.0, step=0.1, description='Front Cap Bolt D (mm)')
+frontcap_num_bolts_slider = widgets.IntSlider(value=12, min=4, max=30, step=1, description='Front Cap Num Bolts')
+nozzle_bolt_diameter_slider = widgets.FloatSlider(value=6.0, min=2.0, max=20.0, step=0.1, description='Nozzle Bolt D (mm)')
+nozzle_num_bolts_slider = widgets.IntSlider(value=12, min=4, max=30, step=1, description='Nozzle Num Bolts')
+ox_tank_bolt_diameter_slider = widgets.FloatSlider(value=6.0, min=2.0, max=20.0, step=0.1, description='Ox Tank Bolt D (mm)')
+ox_tank_num_bolts_slider = widgets.IntSlider(value=12, min=4, max=30, step=1, description='Ox Tank Num Bolts')
+
+
+# Output areas
+text_output = widgets.Output()
+plots_output = widgets.Output()
+
+frontcap_bolt_controls_box = widgets.VBox([frontcap_bolt_diameter_slider, frontcap_num_bolts_slider])
+nozzle_bolt_controls_box = widgets.VBox([nozzle_bolt_diameter_slider, nozzle_num_bolts_slider])
+ox_tank_bolt_controls_box = widgets.VBox([ox_tank_bolt_diameter_slider, ox_tank_num_bolts_slider])
+
+controls_box = widgets.VBox([
+    widgets.Label("Motor Parameters:"),
+    widgets.VBox([r1_slider, r2_slider, grain_slider]),
+    widgets.VBox([mdot_slider, safety_slider]),
+    widgets.VBox([insul_grain_thickness_slider, insul_pre_post_thickness_slider, casing_wall_thickness_slider]),
+    widgets.VBox([pre_slider, post_slider]),
+    widgets.VBox([conv_slider, throat_d_slider, throat_l_slider, div_slider]),
+    widgets.VBox([retainer_len_slider, retainer_inner_r_slider, frontcap_len_slider]),
+    widgets.VBox([casing_material_dropdown, frontcap_material_dropdown, retainer_material_dropdown]),
+    widgets.Label("Front Cap Bolt Parameters:"),
+    frontcap_bolt_controls_box,
+    widgets.Label("Nozzle Retainer Bolt Parameters:"),
+    nozzle_bolt_controls_box,
+    widgets.Label("\nOxidizer Tank Parameters:"),
+    widgets.VBox([ox_tank_material_dropdown, ox_tank_frontcap_material_dropdown, ox_tank_backcap_material_dropdown]),
+    widgets.VBox([ox_tank_safety_slider]),
+    widgets.VBox([ox_tank_diameter_slider, ox_tank_thickness_slider, ox_tank_length_slider]),
+    widgets.VBox([ox_tank_temperature_slider]),
+    widgets.VBox([ox_tank_frontcap_len_slider, ox_tank_backcap_len_slider]),
+    widgets.Label("Oxidizer Tank Bolt Parameters:"),
+    ox_tank_bolt_controls_box,
+    widgets.Label("\nAssembly Parameters:"),
+    widgets.VBox([motor_ox_gap_slider])
+])
+
+left_panel = widgets.VBox([controls_box])
+middle_panel = widgets.VBox([text_output])
+right_panel = widgets.VBox([plots_output])
+
+app_layout = widgets.HBox([left_panel, middle_panel, right_panel])
+
+left_panel.layout.width = '25%'
+middle_panel.layout.width = '25%'
+right_panel.layout.width = '50%'
+
+def on_change(change):
+    # Calculate casing outer diameter based on sliders
+    current_casing_inner_radius = max(r2_slider.value/100 + insul_grain_thickness_slider.value/1000, r2_slider.value/100 + insul_pre_post_thickness_slider.value/1000)
+    current_casing_outer_diameter_cm = (2 * current_casing_inner_radius + 2 * casing_wall_thickness_slider.value/1000) * 100
+    new_ox_tank_diameter_cm = max(ox_tank_diameter_slider.min, min(ox_tank_diameter_slider.max, current_casing_outer_diameter_cm))
+    ox_tank_diameter_slider.value = new_ox_tank_diameter_cm
+
+    simulate(
+        r1_slider.value, r2_slider.value, grain_slider.value,
+        mdot_slider.value,
+        insul_grain_thickness_slider.value, insul_pre_post_thickness_slider.value,
+        pre_slider.value, post_slider.value,
+        conv_slider.value, throat_d_slider.value, throat_l_slider.value, div_slider.value,
+        safety_slider.value, casing_wall_thickness_slider.value,
+        retainer_len_slider.value, retainer_inner_r_slider.value,
+        casing_material_dropdown.value, frontcap_material_dropdown.value, retainer_material_dropdown.value,
+        frontcap_len_slider.value,
+        ox_tank_material_dropdown.value, ox_tank_safety_slider.value, ox_tank_diameter_slider.value, ox_tank_thickness_slider.value, ox_tank_length_slider.value, ox_tank_temperature_slider.value, ox_tank_frontcap_len_slider.value, ox_tank_backcap_len_slider.value,
+        ox_tank_frontcap_material_dropdown.value, ox_tank_backcap_material_dropdown.value,
+        motor_ox_gap_slider.value,
+        text_out=text_output,
+        plots_out=plots_output
+    )
+
+# Attach observers
+all_widgets = [w for box in controls_box.children for w in (box.children if hasattr(box, 'children') else [box])]
+widgets_to_observe = []
+for w in all_widgets:
+    if isinstance(w, (widgets.FloatSlider, widgets.Dropdown, widgets.IntSlider)):
+        if w != ox_tank_diameter_slider:
+            widgets_to_observe.append(w)
+
+for w in widgets_to_observe:
+    w.observe(on_change, names='value')
+
+# Display UI
+display(app_layout)
+
+# Initial simulation run
+on_change(None)

@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Hybrid Rocket Simulator</title>
+    <title>Hybrid Rocket Simulator - Enhanced</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Hybrid Rocket Simulator</h1>
+            <p>Complete implementation with motor assembly, chamber pressure analysis, and structural verification</p>
         </header>
 
         <form method="POST">
@@ -35,7 +36,7 @@
                 {% endfor %}
             </fieldset>
 
-            {# II. Casing & Insulation #}
+            {# II. Casing & Insulation - CORRECTED parameter names #}
             <fieldset>
                 <legend>II. Casing & Insulation</legend>
                 {% for key in ["safety_factor","insul_grain_thk","insul_prepost_thk","casing_wall_thk","pre_comb_len","post_comb_len"] %}
@@ -217,7 +218,7 @@
                 </div>
             </fieldset>
 
-            {# Dropdowns #}
+            {# Materials Section #}
             <fieldset>
                 <legend>Materials</legend>
                 {% for key, cfg in dropdown_config.items() %}
@@ -234,27 +235,33 @@
                 {% endfor %}
             </fieldset>
 
-            <button type="submit" class="submit-btn">Run Simulation</button>
+            <button type="submit" class="submit-btn">Run Enhanced Simulation</button>
         </form>
 
         {% if summary %}
         <section class="summary-panel">
-            <h2>Simulation Summary</h2>
-            <pre>{{ summary }}</pre>
+            <h2>Comprehensive Simulation Results</h2>
+            <div class="summary-content">
+                <pre>{{ summary }}</pre>
+            </div>
         </section>
         {% endif %}
 
         {% if plot_keys %}
         <section class="plot-section">
-            <h2>Performance Plots</h2>
+            <h2>Performance Analysis & Motor Assembly</h2>
             <div class="plot-container">
                 {% for key in plot_keys %}
-                <img src="{{ url_for('serve_plot', key=key) }}"
-                     alt="Performance Plot" class="plot-img">
+                <div class="plot-wrapper">
+                    <img src="{{ url_for('serve_plot', key=key) }}"
+                         alt="Performance Plot: {{ key }}" class="plot-img">
+                    <div class="plot-caption">{{ key|replace('_', ' ')|title }}</div>
+                </div>
                 {% endfor %}
             </div>
         </section>
         {% endif %}
+
     </div>
 </body>
 </html>

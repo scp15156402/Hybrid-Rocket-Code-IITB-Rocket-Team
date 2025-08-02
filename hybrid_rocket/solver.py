@@ -3,19 +3,20 @@
 """
 solver.py
 
-Time‐stepping hybrid rocket burn simulation engine.
-Faithfully mirrors integrated_code_HRM(4)_omn.ipynb.
+Main simulation engine with full notebook implementation.
+EXACT implementation from integrated_code_HRM(4)_omn.ipynb.
+Includes dynamic chamber pressure, N₂O tank modeling, and all missing features.
 """
 
 import numpy as np
 from hybrid_rocket.geometry import port_area, update_port_radius
 from hybrid_rocket.combustion import (
-    regression_rate,
-    oxidizer_flux,
-    fuel_mass_flow_rate,
-    of_ratio,
-    thrust,
-    specific_impulse
+    regression_rate, oxidizer_flux, fuel_mass_flow_rate, of_ratio,
+    get_Tc, solve_choked_pressure, exhaust_velocity, thrust_from_momentum, specific_impulse,
+    n2o_liquid_density, nozzle_exit_area
+)
+from hybrid_rocket.constants import (
+    GRAVITY, R_SPECIFIC, GAMMA, P_AMBIENT, RHO_FUEL
 )
 
 def simulate_burn(
@@ -23,10 +24,12 @@ def simulate_burn(
     r2: float,
     L: float,
     mdot_ox: float,
-    rho_fuel: float
+    rho_fuel: float,
+    current_values: dict = None
 ) -> dict:
     """
-    Simulates hybrid rocket motor burn from initial to final port radius.
+    Simulates hybrid rocket motor burn with EXACT notebook implementation.
+    Includes dynamic chamber pressure, N₂O tank modeling, and oxidizer depletion checks.
 
     Parameters:
         r1 (float): Initial port radius (cm)
@@ -34,63 +37,162 @@ def simulate_burn(
         L (float): Grain length (cm)
         mdot_ox (float): Oxidizer mass flow rate (g/s)
         rho_fuel (float): Fuel density (kg/m³)
+        current_values (dict): UI parameter values for advanced calculations
 
     Returns:
-        dict: Time‐series results for plotting and export
+        dict: Time-series results including pressure and temperature histories
     """
-    # --- Convert inputs to SI units ---
+    # --- Convert inputs to SI units (EXACT notebook conversion) ---
     r      = r1 / 100.0               # cm → m
     r_max  = r2 / 100.0               # cm → m
     L_m    = L  / 100.0               # cm → m
     mdot_ox_si = mdot_ox / 1000.0     # g/s → kg/s
 
-    # --- Time stepping parameters (fixed) ---
+    # --- Time stepping parameters (EXACT notebook: dt = 0.001) ---
     t  = 0.0
-    dt = 0.01
+    dt = 0.001  # Notebook uses finer timestep than app default
 
-    # --- Histories ---
-    time_hist   = []
+    # --- N₂O Tank Modeling (EXACT notebook implementation) ---
+    if current_values is not None:
+        # Oxidizer tank calculations (EXACT notebook)
+        ox_tank_D_outer = current_values["ox_tank_outer_diameter"] / 100.0  # cm -> m
+        ox_tank_t = current_values["ox_tank_wall_thk"] / 1000.0  # mm -> m
+        ox_tank_L = current_values["ox_tank_length"] / 100.0  # cm -> m
+        ox_tank_D_inner = ox_tank_D_outer - 2 * ox_tank_t
+        ox_tank_V_inner = np.pi * (ox_tank_D_inner / 2)**2 * ox_tank_L
+        ox_tank_V_available = 0.8 * ox_tank_V_inner  # 80% ullage (notebook)
+        
+        # N₂O liquid density at tank temperature (EXACT notebook)
+        ox_tank_temp_c = current_values.get("ox_tank_temp", 25.0)
+        rho_n2o = n2o_liquid_density(ox_tank_temp_c)
+        mox_available = ox_tank_V_available * rho_n2o
+        
+        # Throat area for chamber pressure calculation
+        throat_d_mm = current_values.get("throat_diameter", 6.0)
+        A_t = np.pi * (throat_d_mm / 2000.0)**2  # mm -> m radius
+        
+        use_advanced_model = True
+    else:
+        # Fallback for basic simulation
+        mox_available = 1000.0  # Large value to prevent early termination
+        A_t = np.pi * (0.003)**2  # Default 6mm throat
+        use_advanced_model = False
+
+    # --- Histories (EXACT notebook variables) ---
+    time_hist = []
     radius_hist = []
     thrust_hist = []
-    of_hist     = []
-    G_ox_hist   = []
-    isp_hist    = []
+    of_hist = []
+    G_ox_hist = []
+    isp_hist = []
+    Tc_hist = []      # Combustion temperature (MISSING in original app)
+    p_c_hist = []     # Chamber pressure (MISSING in original app)
+    r_dot_hist = []   # Regression rate history
+    
+    # --- Tracking variables (EXACT notebook) ---
+    mox_used = 0.0
+    mfuel_used = 0.0
+    low_pressure_warning = False
+    last_p_c = P_AMBIENT
 
-    # --- Main burn loop: until port reaches final radius ---
-    while r <= r_max:
-        # Port area & oxidizer flux
+    # --- Main burn loop (EXACT notebook conditions) ---
+    while (r < r_max) and (mox_used < mox_available * 0.90):  # Notebook: 90% oxidizer limit
+        
+        # Port area & oxidizer flux (EXACT notebook)
         A_port = port_area(r)
-        G      = oxidizer_flux(mdot_ox_si, A_port)
+        G = oxidizer_flux(mdot_ox_si, A_port)
 
-        # Fuel regression & mass flow
-        r_dot     = regression_rate(G)
+        # Fuel regression & mass flow (EXACT notebook)
+        r_dot = regression_rate(G)
         mdot_fuel = fuel_mass_flow_rate(r_dot, rho_fuel, r, L_m)
 
-        # Total flow & mixture ratio
+        # Total flow & mixture ratio (EXACT notebook)
         mdot_total = mdot_ox_si + mdot_fuel
-        OF         = of_ratio(mdot_ox_si, mdot_fuel)
+        OF = of_ratio(mdot_ox_si, mdot_fuel)
 
-        # Thrust & Isp with fixed nozzle parameters from notebook
-        T   = thrust(mdot_total, Ve=1800.0, pe=1e5, pa=1e5, Ae=1e-4)
-        Isp = specific_impulse(T, mdot_total)
+        # Combustion temperature (EXACT notebook)
+        Tc = get_Tc(OF)
+        
+        if use_advanced_model:
+            # Chamber pressure via choked flow (EXACT notebook)
+            p_c = solve_choked_pressure(mdot_total, A_t, R_SPECIFIC, Tc)
+            
+            # Low pressure warning (EXACT notebook)
+            if p_c < 2e5:  # 2 bar threshold from notebook
+                low_pressure_warning = True
+            
+            # Exhaust velocity from isentropic expansion (EXACT notebook)
+            v_e = exhaust_velocity(p_c, Tc, P_AMBIENT)
+            
+            # Thrust calculation (EXACT notebook)
+            T = thrust_from_momentum(mdot_total, v_e)
+            
+            # Specific impulse
+            Isp = specific_impulse(T, mdot_total)
+            
+        else:
+            # Fallback to simple model for compatibility
+            p_c = 10e5  # Assume 10 bar
+            T = mdot_total * 1800.0  # Fixed exhaust velocity
+            Isp = T / (mdot_total * GRAVITY) if mdot_total > 0 else 0.0
 
-        # Record histories
+        # Record histories (EXACT notebook)
         time_hist.append(t)
-        radius_hist.append(r)
         thrust_hist.append(T)
         of_hist.append(OF)
+        radius_hist.append(r)
+        Tc_hist.append(Tc)
         G_ox_hist.append(G)
+        r_dot_hist.append(r_dot)
+        p_c_hist.append(p_c)
+        radius_hist.append(r)
         isp_hist.append(Isp)
 
-        # Advance time & port radius
-        r += r_dot * dt
+        # Update state (EXACT notebook)
+        dr = r_dot * dt
         t += dt
+        mox_used += mdot_ox_si * dt
+        mfuel_used += mdot_fuel * dt
+        r += dr
+        last_p_c = p_c
 
-    return {
-        "time":   np.array(time_hist),
+    # --- Determine stopping reason (EXACT notebook logic) ---
+    if mox_used >= mox_available * 0.90:
+        stop_reason = "Reached 90% oxidizer consumption"
+    elif r >= r_max:
+        stop_reason = "Reached end of fuel grain"
+    else:
+        stop_reason = "Simulation completed"
+
+    # --- Return results with all histories (EXACT notebook) ---
+    results = {
+        "time": np.array(time_hist),
         "radius": np.array(radius_hist),
         "thrust": np.array(thrust_hist),
-        "of":     np.array(of_hist),
-        "G_ox":   np.array(G_ox_hist),
-        "isp":    np.array(isp_hist)
+        "of": np.array(of_hist),
+        "G_ox": np.array(G_ox_hist),
+        "isp": np.array(isp_hist),
+        "Tc": np.array(Tc_hist),           # NEW: Combustion temperature
+        "p_c": np.array(p_c_hist),         # NEW: Chamber pressure
+        "r_dot": np.array(r_dot_hist),     # NEW: Regression rate history
+        "stop_reason": stop_reason,         # NEW: Why simulation ended
+        "mox_used": mox_used,              # NEW: Oxidizer consumed
+        "mfuel_used": mfuel_used,          # NEW: Fuel consumed
+        "low_pressure_warning": low_pressure_warning  # NEW: Pressure warning flag
     }
+    
+    return results
+
+
+def simulate_burn_legacy(
+    r1: float,
+    r2: float,
+    L: float,
+    mdot_ox: float,
+    rho_fuel: float
+) -> dict:
+    """
+    Legacy simulation function for backward compatibility.
+    Calls the enhanced simulate_burn with simplified parameters.
+    """
+    return simulate_burn(r1, r2, L, mdot_ox, rho_fuel, current_values=None)

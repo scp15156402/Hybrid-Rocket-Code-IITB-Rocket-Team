@@ -64,6 +64,14 @@ def plot_motor_assembly(current_values: dict, results: dict) -> str:
     Plots a 2D cross-section of the entire motor assembly including the oxidizer tank and bolts.
     EXACT implementation from notebook plot_motor_assembly function.
     """
+    # Defensive check: make sure we actually have simulation data
+    radius = results.get("radius", np.array([]))
+    if radius.size == 0:
+        raise ValueError("No simulation data: radius history is empty. "
+                         "Check your tank‐density inputs.")
+    r1 = radius[0]
+
+
     # Extract values from current_values (converted from UI units)
     r1 = results['radius'][0]  # Initial port radius in m
     r2_fuel = current_values["r2"] / 100.0  # cm -> m

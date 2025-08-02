@@ -1,5 +1,3 @@
-# hybrid_rocket/solver.py
-
 """
 solver.py
 
@@ -18,6 +16,7 @@ from hybrid_rocket.combustion import (
 from hybrid_rocket.constants import (
     GRAVITY, R_SPECIFIC, GAMMA, P_AMBIENT, RHO_FUEL
 )
+
 
 def simulate_burn(
     r1: float,
@@ -63,9 +62,12 @@ def simulate_burn(
         ox_tank_V_available = 0.8 * ox_tank_V_inner  # 80% ullage (notebook)
         
         # N₂O liquid density at tank temperature (EXACT notebook)
-        ox_tank_temp_c = current_values.get("ox_tank_temp", 25.0)
-        rho_n2o = n2o_liquid_density(ox_tank_temp_c)
+        # Clamp °C to the spline’s valid domain (~–24.15 °C to +36.25 °C)
+        temp_c = current_values.get("ox_tank_temp", 25.0)
+        temp_c = max(min(temp_c,  36.25), -24.15)
+        rho_n2o = n2o_liquid_density(temp_c)
         mox_available = ox_tank_V_available * rho_n2o
+
         
         # Throat area for chamber pressure calculation
         throat_d_mm = current_values.get("throat_diameter", 6.0)
@@ -85,8 +87,8 @@ def simulate_burn(
     of_hist = []
     G_ox_hist = []
     isp_hist = []
-    Tc_hist = []      # Combustion temperature (MISSING in original app)
-    p_c_hist = []     # Chamber pressure (MISSING in original app)
+    Tc_hist = []      # Combustion temperature (NEW)
+    p_c_hist = []     # Chamber pressure (NEW)
     r_dot_hist = []   # Regression rate history
     
     # --- Tracking variables (EXACT notebook) ---
@@ -127,7 +129,7 @@ def simulate_burn(
             # Thrust calculation (EXACT notebook)
             T = thrust_from_momentum(mdot_total, v_e)
             
-            # Specific impulse
+            # Specific impulse calculation
             Isp = specific_impulse(T, mdot_total)
             
         else:
@@ -140,12 +142,11 @@ def simulate_burn(
         time_hist.append(t)
         thrust_hist.append(T)
         of_hist.append(OF)
-        radius_hist.append(r)
+        radius_hist.append(r)  # only once
         Tc_hist.append(Tc)
         G_ox_hist.append(G)
         r_dot_hist.append(r_dot)
         p_c_hist.append(p_c)
-        radius_hist.append(r)
         isp_hist.append(Isp)
 
         # Update state (EXACT notebook)
@@ -172,15 +173,15 @@ def simulate_burn(
         "of": np.array(of_hist),
         "G_ox": np.array(G_ox_hist),
         "isp": np.array(isp_hist),
-        "Tc": np.array(Tc_hist),           # NEW: Combustion temperature
-        "p_c": np.array(p_c_hist),         # NEW: Chamber pressure
-        "r_dot": np.array(r_dot_hist),     # NEW: Regression rate history
-        "stop_reason": stop_reason,         # NEW: Why simulation ended
-        "mox_used": mox_used,              # NEW: Oxidizer consumed
-        "mfuel_used": mfuel_used,          # NEW: Fuel consumed
-        "low_pressure_warning": low_pressure_warning  # NEW: Pressure warning flag
+        "Tc": np.array(Tc_hist),
+        "p_c": np.array(p_c_hist),
+        "r_dot": np.array(r_dot_hist),
+        "stop_reason": stop_reason,
+        "mox_used": mox_used,
+        "mfuel_used": mfuel_used,
+        "low_pressure_warning": low_pressure_warning
     }
-    
+
     return results
 
 

@@ -1,6 +1,6 @@
-flask==2.3.2
-flask-caching==2.1.0
-numpy==1.26.4
-pandas==2.1.2
-matplotlib==3.8.4
-gunicorn==20.1.0
+flask==2.2.5               # last version supporting Python 3.8
+flask-caching==1.10.1      # works with Flask 2.2
+numpy==1.24.4              # latest version supporting Python 3.8
+scipy==1.10.1              # latest version supporting Python 3.8
+matplotlib==3.7.3          # latest version supporting Python 3.8
+pandas==1.5.3              # for Python 3.8

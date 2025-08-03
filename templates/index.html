@@ -58,9 +58,8 @@
                          step="{{slider_config[key].step}}" value="{{current_values[key]}}"
                          oninput="document.getElementById('{{key}}_val').value = this.value">
                   <input type="number" id="{{key}}_val"
-                         min="{{slider_config[key].min}}" max="{{slider_config[key].max}}"
-                         step="{{slider_config[key].step}}" value="{{current_values[key]}}"
-                         onchange="document.getElementById('{{key}}').value = this.value">
+       value="{{current_values[key]}}"
+       onchange="document.getElementById('{{key}}').value = this.value">
                 </div>
               {% endfor %}
               {% if tab == 'tab6' %}
@@ -73,11 +72,9 @@
                          value="{{ current_values['motor_ox_gap'] }}"
                          oninput="document.getElementById('motor_ox_gap_val').value = this.value">
                   <input type="number" id="motor_ox_gap_val"
-                         min="{{ slider_config['motor_ox_gap'].min }}"
-                         max="{{ slider_config['motor_ox_gap'].max }}"
-                         step="{{ slider_config['motor_ox_gap'].step }}"
-                         value="{{ current_values['motor_ox_gap'] }}"
-                         onchange="document.getElementById('motor_ox_gap').value = this.value">
+       value="{{ current_values['motor_ox_gap'] }}"
+       onchange="document.getElementById('motor_ox_gap').value = this.value">
+
                 </div>
               {% endif %}
               {% if tab == 'tab7' %}

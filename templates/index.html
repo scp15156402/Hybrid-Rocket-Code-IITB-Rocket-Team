@@ -11,6 +11,7 @@
   <div class="app">
     <!-- HEADER -->
 <header class="app-header">
+  <canvas id="headerCanvas" class="bg-canvas" aria-hidden="true"></canvas>
   <div class="header-left">
     <h1 class="app-title">Hybrid Motor Simulation</h1>
   </div>
@@ -163,5 +164,6 @@
   <!-- JS -->
   <script src="{{ url_for('static', filename='js/ribbon.js') }}"></script>
   <script src="{{ url_for('static', filename='js/results-panel.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/header-particles.js') }}"></script>
 </body>
 </html>

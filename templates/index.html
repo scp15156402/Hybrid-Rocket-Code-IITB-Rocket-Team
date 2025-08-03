@@ -53,8 +53,11 @@
                   <input type="range" id="{{key}}" name="{{key}}"
                          min="{{slider_config[key].min}}" max="{{slider_config[key].max}}"
                          step="{{slider_config[key].step}}" value="{{current_values[key]}}"
-                         oninput="this.nextElementSibling.value = this.value">
-                  <output>{{current_values[key]}}</output>
+                         oninput="document.getElementById('{{key}}_val').value = this.value">
+                  <input type="number" id="{{key}}_val"
+                         min="{{slider_config[key].min}}" max="{{slider_config[key].max}}"
+                         step="{{slider_config[key].step}}" value="{{current_values[key]}}"
+                         onchange="document.getElementById('{{key}}').value = this.value">
                 </div>
               {% endfor %}
               {% if tab == 'tab6' %}
@@ -65,8 +68,13 @@
                          max="{{ slider_config['motor_ox_gap'].max }}"
                          step="{{ slider_config['motor_ox_gap'].step }}"
                          value="{{ current_values['motor_ox_gap'] }}"
-                         oninput="this.nextElementSibling.value = this.value">
-                  <output>{{ current_values['motor_ox_gap'] }}</output>
+                         oninput="document.getElementById('motor_ox_gap_val').value = this.value">
+                  <input type="number" id="motor_ox_gap_val"
+                         min="{{ slider_config['motor_ox_gap'].min }}"
+                         max="{{ slider_config['motor_ox_gap'].max }}"
+                         step="{{ slider_config['motor_ox_gap'].step }}"
+                         value="{{ current_values['motor_ox_gap'] }}"
+                         onchange="document.getElementById('motor_ox_gap').value = this.value">
                 </div>
               {% endif %}
               {% if tab == 'tab7' %}
@@ -96,7 +104,7 @@
 
 <!-- MAIN CONTENT BELOW RIBBON -->
 <div class="main-content-below-ribbon">
-  
+
   <!-- TAB to expand panel when collapsed -->
   <div id="results-tab" class="results-tab">
     <i class="bi bi-chevron-up" title="Show Results"></i>
@@ -115,7 +123,6 @@
       <pre id="results-summary">{{ summary }}</pre>
     {% endif %}
   </aside>
-
 
       <!-- RIGHT: Figure Canvas -->
       <main class="canvas">

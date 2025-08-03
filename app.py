@@ -9,13 +9,14 @@ in the results panel rather than returning a raw 400.
 """
 
 import os
+import numpy as np
 from flask import Flask, render_template, request, send_file
 from flask_caching import Cache
 from werkzeug.exceptions import BadRequestKeyError
 
 # Absolute imports of your modules
 from hybrid_rocket.solver import simulate_burn
-from hybrid_rocket.export import print_summary, compute_structural_metrics
+from hybrid_rocket.export import get_summary_dict, compute_structural_metrics
 from hybrid_rocket.slider_config import slider_config, dropdown_config
 from hybrid_rocket.plots import init_plot_cache, save_all_plots, get_cached_image
 
@@ -65,38 +66,51 @@ def index():
                 current_values=current_values,
             )
 
-            # 5) Generate textual summary
-            summary = print_summary(results, current_values)
+            # 5) Generate nested-dict summary
+            summary = get_summary_dict(results, current_values)
 
             # 6) Generate all plots
             plot_keys = save_all_plots(results, current_values)
 
-            # 7) Append any safety warnings
+            # 7) Build safety warnings list and insert into summary dict
             warnings = []
-            # Chamber pressure >40 bar?
-            if results.get("p_c") is not None and len(results["p_c"]) > 0:
-                if max(results["p_c"]) > 40e5:
-                    warnings.append("*** WARNING: Peak chamber pressure exceeds 40 bar! ***")
+
+            # Pull out the arrays/lists once
+            p_c = results.get("p_c", [])
+            low_warn = results.get("low_pressure_warning", False)
+
+            # Chamber pressure > 40 bar?
+            if isinstance(p_c, (list, tuple, np.ndarray)) and len(p_c) > 0:
+                if max(p_c) > 40e5:
+                    warnings.append("Peak chamber pressure exceeds 40 bar")
+
             # Low‐pressure warning flag
-            if results.get("low_pressure_warning"):
-                warnings.append("*** WARNING: Chamber pressure dropped below 2 bar.***")
+            if low_warn:
+                warnings.append("Chamber pressure dropped below 2 bar")
 
             # Structural checks
             try:
                 struct = compute_structural_metrics(current_values, results)
-                if results.get("p_c") and max(results["p_c"]) > struct["max_pressure_design_casing"]:
-                    warnings.append("*** WARNING: Chamber pressure exceeds casing design pressure! ***")
+                if len(p_c) > 0 and max(p_c) > struct["max_pressure_design_casing"]:
+                    warnings.append("Chamber pressure exceeds casing design pressure")
                 if struct["n2o_vapor_pressure"] > struct["max_pressure_design_ox_tank"]:
-                    warnings.append("*** WARNING: N₂O vapor pressure exceeds tank design pressure! ***")
+                    warnings.append("N₂O vapor pressure exceeds tank design pressure")
             except Exception as e:
-                warnings.append(f"*** WARNING: Structural check failed: {e} ***")
+                warnings.append(f"Structural check failed: {e}")
 
             if warnings:
-                summary += "\n\n--- SAFETY WARNINGS ---\n" + "\n".join(warnings)
+                summary["Safety Warnings"] = {
+                    f"Warning {i+1}": msg for i, msg in enumerate(warnings)
+                }
 
         except Exception as e:
             # Any missing/invalid input or simulation error ends up here
-            summary = f"Error: {e}\n\nPlease check your input parameters and try again."
+            summary = {
+                "Error": {
+                    "Message": str(e),
+                    "Advice": "Please check your input parameters and try again."
+                }
+            }
             plot_keys = []
 
     return render_template(

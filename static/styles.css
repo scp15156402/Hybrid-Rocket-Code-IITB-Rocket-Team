@@ -1,4 +1,5 @@
 /* styles.css */
+
 /* ------------------------------------------
    Windows 7 / MS Word Ribbon Theme Styling
 --------------------------------------------- */
@@ -193,17 +194,9 @@ body {
   font-size: var(--font-label);
   margin-bottom: var(--spacing-xs);
 }
-.form-group input[type="range"] {
-  width: 100%;
-}
-.form-group output,
+.form-group input[type="range"],
 .form-group select {
   margin-top: var(--spacing-xs);
-  padding: 2px 6px;
-  border: 1px solid #ccc;
-  background: #f8f8f8;
-  font-size: 0.9rem;
-  border-radius: 3px;
 }
 
 /* ========== MAIN CONTENT ========== */
@@ -215,24 +208,7 @@ body {
   overflow: hidden;
 }
 
-/* ========== RESULTS PANE ========== */
-.collapsible-results {
-  display: flex;
-  flex-direction: column;
-}
-.toggle-results-btn {
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-  font-weight: bold;
-}
-.toggle-results-btn:hover {
-  background: var(--color-secondary);
-}
+/* ========== RESULTS PANEL ========== */
 .results {
   flex: 1;
   background: #f4f4f8;
@@ -244,26 +220,136 @@ body {
 .results.collapsed {
   display: none;
 }
-.results h2 {
-  text-align: center;
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+.results-header-title {
   font-size: var(--font-heading);
   color: var(--color-primary);
-  margin-bottom: var(--spacing-md);
 }
-.results pre {
-  background: #f0f4f9;
-  padding: var(--spacing-sm);
-  font-family: Consolas, monospace;
-  font-size: 0.85rem;
+.results-controls i {
+  margin-left: var(--spacing-sm);
+  cursor: pointer;
+}
+
+/* Results summary grid */
+.results-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+}
+
+/* Section block */
+.results-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  overflow-x: auto;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow);
+}
+
+/* Section title */
+.results-title {
+  font-size: var(--font-heading);
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.3rem;
+}
+
+/* List of metrics */
+.results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.results-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.results-item:last-child {
+  border-bottom: none;
+}
+.label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+.value {
+  font-family: monospace;
+  color: var(--color-secondary);
+}
+
+/* Error box */
+.error-box {
+  padding: 1rem;
+  background: #ffe5e5;
+  color: #a30000;
+  border: 1px solid #f5c2c2;
+  border-radius: var(--radius);
+}
+.error-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.error-message {
+  font-size: 0.95rem;
+}
+
+/* ========== SUMMARY GRID & SECTIONS ========== */
+.summary-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+.summary-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow);
+}
+.summary-section-title {
+  margin-top: 0;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-heading);
+  color: var(--color-primary);
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.25rem;
+}
+.summary-metrics {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.summary-metric {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.summary-metric:last-child {
+  border-bottom: none;
+}
+.metric-label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+.metric-value {
+  font-family: monospace;
+  color: var(--color-secondary);
 }
 
 /* ========== CANVAS (PLOTS) ========== */
 .canvas {
   flex: 2;
-  background: #fff;
+  background: var(--color-surface);
   padding: 1rem;
   border-radius: 10px;
   overflow-y: auto;
@@ -302,46 +388,8 @@ body {
   color: var(--color-muted);
   font-style: italic;
 }
-
-/* ================================
-   RESULTS PANEL TOGGLING & PINNING
-================================== */
-.results-container {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  background: #f4f4f8;
-  border-radius: 10px;
-  box-shadow: var(--shadow);
-  padding: 1rem;
-  max-height: 80vh;
-  overflow-y: auto;
-  transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.results-container.collapsed {
-  display: none;
-}
-
-.results-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--spacing-sm);
-}
-
-.results-header h2 {
-  font-size: var(--font-heading);
-  color: var(--color-primary);
-  margin: 0;
-}
-
-.results-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
+/* ========== OTHER CONTROLS & UTILITIES ========== */
+/* Pin and chevron buttons in the results header */
 .results-pin-btn,
 .results-chevron-btn {
   background: none;
@@ -355,24 +403,23 @@ body {
   justify-content: center;
   transition: color 0.2s ease;
 }
-
 .results-pin-btn:hover,
 .results-chevron-btn:hover {
   color: var(--color-primary);
 }
-
-/* Optional: Slight visual feedback for pin state */
+/* Visual feedback when pinned */
 .results-pin-btn.pinned {
   color: var(--color-accent);
 }
 
+/* Collapsed‐panel tab to reopen results */
 .results-tab {
   display: none;
   position: absolute;
   top: 10px;
   left: 0;
-  background-color: var(--color-surface, white);
-  border: 1px solid #ccc;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-left: none;
   padding: 6px;
   border-radius: 0 6px 6px 0;
@@ -385,7 +432,13 @@ body {
   justify-content: center;
 }
 
-.form-group input[type=number] {
+/* Numeric inputs in form groups */
+.form-group input[type="number"] {
   width: 60px;
   margin-left: 8px;
+}
+
+/* Utility helper for hiding/showing collapsed results */
+.results.collapsed {
+  display: none;
 }

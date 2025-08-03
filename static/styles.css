@@ -414,11 +414,11 @@
 }
 
 .logo {
-  height: 38px;
+  height: 42px;
   width: auto;
   object-fit: contain;
   display: block;
-  margin-right: var(--space-4);
+  margin-right: 0;
   transition: transform var(--duration-normal) var(--ease-standard), opacity 0.3s ease;
 }
 .logo:hover {
@@ -452,14 +452,19 @@
 .team-name:hover {
   opacity: 0.8;
   cursor: default;
+  color: rgb(223, 114, 36);
 }
 
 .app-title {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-3xl);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--color-white);
   white-space: nowrap;
+}
+
+.app-title:hover {
+  color: rgb(223, 114, 36);
 }
 
 /* ================= 0X. Header Background Canvas ================= */

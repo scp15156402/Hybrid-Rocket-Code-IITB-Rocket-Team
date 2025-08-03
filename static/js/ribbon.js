@@ -1,8 +1,11 @@
+// static/ribbon.js
+
 document.addEventListener('DOMContentLoaded', () => {
-  const ribbon = document.getElementById('ribbon');
+  const ribbon       = document.getElementById('ribbon');
   const collapseIcon = document.getElementById('collapse-icon');
-  const collapseBtn = document.getElementById('collapse-btn');
-  const tabButtons = document.querySelectorAll('.ribbon-tabs button');
+  const collapseBtn  = document.getElementById('collapse-btn');
+  const tabButtons   = document.querySelectorAll('.ribbon-tabs button');
+  const panels       = document.querySelectorAll('.ribbon-panel');
 
   // Restore previous collapsed state
   const collapsed = sessionStorage.getItem('ribbonCollapsed') === 'true';
@@ -11,18 +14,25 @@ document.addEventListener('DOMContentLoaded', () => {
   collapseIcon.classList.toggle('bi-chevron-down', collapsed);
   collapseIcon.classList.toggle('bi-chevron-up', !collapsed);
 
-  // Collapse ribbon
+  // Collapse ribbon (clears all highlights)
   window.toggleCollapse = function () {
     const nowCollapsed = ribbon.classList.toggle('collapsed');
     sessionStorage.setItem('ribbonCollapsed', nowCollapsed);
     collapseIcon.classList.toggle('bi-chevron-up', !nowCollapsed);
     collapseIcon.classList.toggle('bi-chevron-down', nowCollapsed);
     collapseBtn.style.display = nowCollapsed ? 'none' : 'block'; // Hide chevron when collapsed
+
+    if (nowCollapsed) {
+      // Clear all tab and panel highlights when collapsed
+      tabButtons.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+    }
   };
 
-  // Expand ribbon when clicking any tab
+  // Expand ribbon and activate tab when clicking any tab
   tabButtons.forEach(btn => {
     btn.addEventListener('click', () => {
+      // If collapsed, expand first
       if (ribbon.classList.contains('collapsed')) {
         ribbon.classList.remove('collapsed');
         sessionStorage.setItem('ribbonCollapsed', false);
@@ -31,13 +41,16 @@ document.addEventListener('DOMContentLoaded', () => {
         collapseBtn.style.display = 'block';
       }
 
-      // Activate tab and panel
+      // Activate tab and matching panel
       tabButtons.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+
       btn.classList.add('active');
       const activeTab = btn.getAttribute('data-tab');
-      document.querySelectorAll('.ribbon-panel').forEach(panel => {
-        panel.classList.toggle('active', panel.id === activeTab);
-      });
+      const targetPanel = document.getElementById(activeTab);
+      if (targetPanel) {
+        targetPanel.classList.add('active');
+      }
     });
   });
 });

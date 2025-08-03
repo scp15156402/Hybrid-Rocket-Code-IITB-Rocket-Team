@@ -20,94 +20,102 @@
       </div>
     </header>
 
-<!-- RIBBON TOOLBAR -->
-<aside class="ribbon" id="ribbon">
-  <form method="POST">
-    <div class="ribbon-header">
-      <button type="submit" class="run-button" title="Run Simulation">Run</button>
-      <nav class="ribbon-tabs">
-        <button type="button" data-tab="tab1" class="active">Combustion</button>
-        <button type="button" data-tab="tab2">Casing</button>
-        <button type="button" data-tab="tab3">Nozzle</button>
-        <button type="button" data-tab="tab4">Retainer</button>
-        <button type="button" data-tab="tab5">Bolts</button>
-        <button type="button" data-tab="tab6">Tank</button>
-        <button type="button" data-tab="tab7">Materials</button>
-      </nav>
-    </div>
+    <!-- RIBBON TOOLBAR -->
+    <aside class="ribbon" id="ribbon">
+      <form method="POST">
+        <div class="ribbon-header">
+          <button type="submit" class="run-button" title="Run Simulation">Run</button>
+          <nav class="ribbon-tabs">
+            <button type="button" data-tab="tab1" class="active">Combustion</button>
+            <button type="button" data-tab="tab2">Casing</button>
+            <button type="button" data-tab="tab3">Nozzle</button>
+            <button type="button" data-tab="tab4">Retainer</button>
+            <button type="button" data-tab="tab5">Bolts</button>
+            <button type="button" data-tab="tab6">Tank</button>
+            <button type="button" data-tab="tab7">Materials</button>
+          </nav>
+        </div>
 
-    <!-- Ribbon panels -->
-    <div class="ribbon-panels">
-      {% for tab, keys in {
-          'tab1': ["r1","r2","L","mdot_ox","rho_fuel"],
-          'tab2': ["safety_factor","insul_grain_thk","insul_prepost_thk","casing_wall_thk","pre_comb_len","post_comb_len"],
-          'tab3': ["converge_half_angle","throat_diameter","throat_length","diverge_half_angle"],
-          'tab4': ["retainer_length","retainer_inner_radius","frontcap_length"],
-          'tab5': ["frontcap_bolt_diameter","frontcap_num_bolts","nozzle_bolt_diameter","nozzle_num_bolts","ox_tank_bolt_diameter","ox_tank_num_bolts"],
-          'tab6': ["ox_tank_safety_factor","ox_tank_outer_diameter","ox_tank_wall_thk","ox_tank_length","ox_tank_temp","ox_tank_frontcap_thk","ox_tank_backcap_thk"],
-          'tab7': []
-      }.items() %}
-        <section id="{{ tab }}" class="ribbon-panel {% if loop.first %}active{% endif %}">
-          {% for key in keys %}
-            <div class="form-group">
-              <label for="{{key}}">{{ slider_config[key].label }}</label>
-              <input type="range" id="{{key}}" name="{{key}}"
-                     min="{{slider_config[key].min}}" max="{{slider_config[key].max}}"
-                     step="{{slider_config[key].step}}" value="{{current_values[key]}}"
-                     oninput="this.nextElementSibling.value = this.value">
-              <output>{{current_values[key]}}</output>
-            </div>
+        <div class="ribbon-panels">
+          {% for tab, keys in {
+              'tab1': ["r1","r2","L","mdot_ox","rho_fuel"],
+              'tab2': ["safety_factor","insul_grain_thk","insul_prepost_thk","casing_wall_thk","pre_comb_len","post_comb_len"],
+              'tab3': ["converge_half_angle","throat_diameter","throat_length","diverge_half_angle"],
+              'tab4': ["retainer_length","retainer_inner_radius","frontcap_length"],
+              'tab5': ["frontcap_bolt_diameter","frontcap_num_bolts","nozzle_bolt_diameter","nozzle_num_bolts","ox_tank_bolt_diameter","ox_tank_num_bolts"],
+              'tab6': ["ox_tank_safety_factor","ox_tank_outer_diameter","ox_tank_wall_thk","ox_tank_length","ox_tank_temp","ox_tank_frontcap_thk","ox_tank_backcap_thk"],
+              'tab7': []
+          }.items() %}
+            <section id="{{ tab }}" class="ribbon-panel {% if loop.first %}active{% endif %}">
+              {% for key in keys %}
+                <div class="form-group">
+                  <label for="{{key}}">{{ slider_config[key].label }}</label>
+                  <input type="range" id="{{key}}" name="{{key}}"
+                         min="{{slider_config[key].min}}" max="{{slider_config[key].max}}"
+                         step="{{slider_config[key].step}}" value="{{current_values[key]}}"
+                         oninput="this.nextElementSibling.value = this.value">
+                  <output>{{current_values[key]}}</output>
+                </div>
+              {% endfor %}
+              {% if tab == 'tab6' %}
+                <div class="form-group">
+                  <label for="motor_ox_gap">{{ slider_config['motor_ox_gap'].label }}</label>
+                  <input type="range" id="motor_ox_gap" name="motor_ox_gap"
+                         min="{{ slider_config['motor_ox_gap'].min }}"
+                         max="{{ slider_config['motor_ox_gap'].max }}"
+                         step="{{ slider_config['motor_ox_gap'].step }}"
+                         value="{{ current_values['motor_ox_gap'] }}"
+                         oninput="this.nextElementSibling.value = this.value">
+                  <output>{{ current_values['motor_ox_gap'] }}</output>
+                </div>
+              {% endif %}
+              {% if tab == 'tab7' %}
+                {% for key, cfg in dropdown_config.items() %}
+                  <div class="form-group">
+                    <label for="{{key}}">{{ cfg.label }}</label>
+                    <select id="{{key}}" name="{{key}}">
+                      {% for opt in cfg.options %}
+                        <option value="{{opt}}" {% if opt == current_values[key] %}selected{% endif %}>{{opt}}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            </section>
           {% endfor %}
-          {% if tab == 'tab6' %}
-            <div class="form-group">
-              <label for="motor_ox_gap">{{ slider_config['motor_ox_gap'].label }}</label>
-              <input type="range" id="motor_ox_gap" name="motor_ox_gap"
-                     min="{{ slider_config['motor_ox_gap'].min }}"
-                     max="{{ slider_config['motor_ox_gap'].max }}"
-                     step="{{ slider_config['motor_ox_gap'].step }}"
-                     value="{{ current_values['motor_ox_gap'] }}"
-                     oninput="this.nextElementSibling.value = this.value">
-              <output>{{ current_values['motor_ox_gap'] }}</output>
-            </div>
-          {% endif %}
-          {% if tab == 'tab7' %}
-            {% for key, cfg in dropdown_config.items() %}
-              <div class="form-group">
-                <label for="{{key}}">{{ cfg.label }}</label>
-                <select id="{{key}}" name="{{key}}">
-                  {% for opt in cfg.options %}
-                    <option value="{{opt}}" {% if opt == current_values[key] %}selected{% endif %}>{{opt}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            {% endfor %}
-          {% endif %}
-        </section>
-      {% endfor %}
-    </div>
+        </div>
 
-    <!-- Ribbon footer with collapse chevron -->
-    <div class="ribbon-footer">
-      <button type="button" id="collapse-btn" class="footer-btn" onclick="toggleCollapse()" title="Collapse Ribbon">
-        <i id="collapse-icon" class="bi bi-chevron-up"></i>
-      </button>
-    </div>
-  </form>
-</aside>
+        <!-- Ribbon footer with collapse chevron -->
+        <div class="ribbon-footer">
+          <button type="button" id="collapse-btn" class="footer-btn" onclick="toggleCollapse()" title="Collapse Ribbon">
+            <i id="collapse-icon" class="bi bi-chevron-up"></i>
+          </button>
+        </div>
+      </form>
+    </aside>
 
+<!-- MAIN CONTENT BELOW RIBBON -->
+<div class="main-content-below-ribbon">
+  
+  <!-- TAB to expand panel when collapsed -->
+  <div id="results-tab" class="results-tab">
+    <i class="bi bi-chevron-up" title="Show Results"></i>
+  </div>
 
-    <!-- MAIN CONTENT BELOW RIBBON -->
-    <div class="main-content-below-ribbon">
-      <!-- LEFT: Collapsible Results -->
-      <div class="collapsible-results">
-        <button class="toggle-results-btn" onclick="toggleResults()">Show Results</button>
-        <aside id="results-panel" class="results collapsed">
-          {% if summary %}
-            <h2>Comprehensive Simulation Results</h2>
-            <pre>{{ summary }}</pre>
-          {% endif %}
-        </aside>
+  <!-- LEFT: Results Panel -->
+  <aside id="results-panel" class="results">
+    <div class="results-header">
+      <span>Simulation Results</span>
+      <div class="results-controls">
+        <i id="results-pin" class="bi bi-pin-angle-fill" title="Pin/Unpin Panel"></i>
+        <i id="results-toggle" class="bi bi-chevron-down" title="Collapse/Expand Results"></i>
       </div>
+    </div>
+    {% if summary %}
+      <pre id="results-summary">{{ summary }}</pre>
+    {% endif %}
+  </aside>
+
 
       <!-- RIGHT: Figure Canvas -->
       <main class="canvas">
@@ -125,15 +133,7 @@
   </div>
 
   <!-- JS -->
-  <script>
-    function toggleResults() {
-      const panel = document.getElementById('results-panel');
-      const btn = document.querySelector('.toggle-results-btn');
-      const isCollapsed = panel.classList.toggle('collapsed');
-      btn.textContent = isCollapsed ? 'Show Results' : 'Hide Results';
-    }
-  </script>
-
   <script src="{{ url_for('static', filename='js/ribbon.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/results-panel.js') }}"></script>
 </body>
 </html>

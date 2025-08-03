@@ -302,3 +302,85 @@ body {
   color: var(--color-muted);
   font-style: italic;
 }
+
+/* ================================
+   RESULTS PANEL TOGGLING & PINNING
+================================== */
+.results-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #f4f4f8;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  max-height: 80vh;
+  overflow-y: auto;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.results-container.collapsed {
+  display: none;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.results-header h2 {
+  font-size: var(--font-heading);
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.results-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.results-pin-btn,
+.results-chevron-btn {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.results-pin-btn:hover,
+.results-chevron-btn:hover {
+  color: var(--color-primary);
+}
+
+/* Optional: Slight visual feedback for pin state */
+.results-pin-btn.pinned {
+  color: var(--color-accent);
+}
+
+.results-tab {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 0;
+  background-color: var(--color-surface, white);
+  border: 1px solid #ccc;
+  border-left: none;
+  padding: 6px;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  z-index: 100;
+}
+.results.collapsed .results-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

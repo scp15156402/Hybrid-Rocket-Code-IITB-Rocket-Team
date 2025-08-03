@@ -392,62 +392,76 @@
   /* App Structure */
   .app { display: flex; flex-direction: column; height: 100%; }
 
-  .app-header {
-    height: 50px; /* compact size */
-    padding: var(--space-8) var(--space-16);
-    box-shadow: var(--shadow-sm);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--color-border);
-    position: relative;
-    z-index: 100;
-    background-color: var(--color-blue-800);
-    color: var(--color-white);
-  }
+.app-header {
+  height: 60px; /* compact size */
+  padding: var(--space-8) var(--space-16);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); /* refined shadow */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* soft subtle separator */
+  position: relative;
+  z-index: 100;
+  background-color: var(--color-blue-800);
+  color: var(--color-white);
+}
 
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: var(--space-8);
-  }
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
 
-  .logo {
-    height: 32px;
-    width: auto;
-    object-fit: contain;
-    display: block;
-    margin-right: var(--space-8);
-    transition: transform var(--duration-normal) var(--ease-standard);
-  }
-  .logo:hover {
-    transform: none;
-  }
+.logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin-right: var(--space-4);
+  transition: transform var(--duration-normal) var(--ease-standard), opacity 0.3s ease;
+}
+.logo:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
 
-  .logo-text {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-bold);
-    letter-spacing: var(--letter-spacing-tight);
-    color: var(--color-white);
-    line-height: 1;
-    white-space: nowrap;
-    text-decoration: none;
-  }
+.logo-text {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--color-white);
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+}
+.logo-text:hover {
+  opacity: 0.85;
+  cursor: pointer;
+}
 
-  .team-name {
-    font-size: var(--font-size-xl);
-    opacity: 0.7;
-    color: var(--color-white);
-    margin-left: var(--space-4);
-    white-space: nowrap;
-  }
+.team-name {
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+  color: var(--color-white);
+  margin-left: var(--space-6);
+  white-space: nowrap;
+  transition: opacity 0.3s ease;
+}
+.team-name:hover {
+  opacity: 0.8;
+  cursor: default;
+}
 
-  .app-title {
-    font-size: var(--font-size-2xl);
-    font-weight: var(--font-weight-bold);
-    letter-spacing: var(--letter-spacing-tight);
-    color: var(--color-white);
-  }
+.app-title {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-white);
+  white-space: nowrap;
+}
+
 
 /* ================================
    Ribbon Styles
@@ -484,7 +498,7 @@
 
 /* Run Button */
 .run-button {
-  background: var(--color-warning);
+  background: rgb(223, 114, 36);
   color: var(--color-white);
   border: none;
   border-radius: var(--radius-full);
@@ -529,7 +543,7 @@
 .ribbon-tabs button {
   background: transparent;
   color: #cfd8e3; /* soft white text */
-  font-weight: 500;
+  font-weight: 700;
   border: none;
   padding: 6px 12px;
   border-radius: 6px;
@@ -791,6 +805,7 @@ input[type="number"]:focus-visible {
     gap: var(--space-24);
     flex: 1;
     overflow: hidden;
+    position: relative;
   }
 
   /* Results Panel */
@@ -863,6 +878,7 @@ input[type="number"]:focus-visible {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
     border-color: var(--color-primary);
+    background: var(--color-surface);
   }
 
   .results-title {
@@ -936,14 +952,16 @@ input[type="number"]:focus-visible {
     box-shadow: var(--shadow-md);
   }
 
-  .section-title {
-    text-align: center;
-    font-size: var(--font-size-3xl);
-    color: var(--color-primary);
-    margin-bottom: var(--space-32);
-    font-weight: var(--font-weight-bold);
-    letter-spacing: var(--letter-spacing-tight);
-  }
+.section-title {
+  text-align: center;
+  font-size: var(--font-size-4xl);             /* Bigger title */
+  font-weight: var(--font-weight-black);       /* Bolder title */
+  color: var(--color-primary);
+  margin-bottom: var(--space-24);              /* Reduce space if separator added */
+  letter-spacing: var(--letter-spacing-tight);
+  position: relative;
+  padding-bottom: var(--space-4);              /* Space between title and separator */
+}
 
   .viz-figure {
     width: 85%;
@@ -982,7 +1000,7 @@ input[type="number"]:focus-visible {
   .results-tab {
     display: none;
     position: absolute;
-    top: 10px;
+    top: 50px;
     left: 0;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -993,6 +1011,8 @@ input[type="number"]:focus-visible {
     z-index: 100;
     box-shadow: var(--shadow-md);
     transition: all var(--duration-normal) var(--ease-standard);
+    background: var(--color-primary); /* Uses your primary blue (from :root) */
+    color: var(--color-btn-primary-text); /* Ensures chevron/icon stays readable */
   }
   .results.collapsed .results-tab {
     display: flex;
@@ -1111,3 +1131,36 @@ input[type="number"]:focus-visible {
     font-family: 'FKGroteskNeue';
     src: url('https://r2cdn.perplexity.ai/fonts/FKGroteskNeue.woff2') format('woff2');
   }
+
+  html, body {
+  overflow: hidden;
+  height: 100%;
+}
+
+/* ========================
+   Custom Scrollbar Styles (Blue)
+   ======================== */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--color-blue-500) transparent;
+}
+
+/* WebKit Browsers */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-blue-500); /* Use your defined blue */
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-blue-700); /* Darker blue on hover */
+}

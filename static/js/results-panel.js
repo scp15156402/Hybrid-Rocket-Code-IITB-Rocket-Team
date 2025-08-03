@@ -19,13 +19,15 @@ document.addEventListener("DOMContentLoaded", function () {
   isPinned = isPinned === null ? true : isPinned === "true";
   isOpen = isOpen === null ? true : isOpen === "true";
 
-  function updateToggleIcons() {
-    toggleIcon.classList.toggle("bi-chevron-down", isOpen);
-    toggleIcon.classList.toggle("bi-chevron-up", !isOpen);
+function updateToggleIcons() {
+  // Chevron inside the panel: show ◀ when open, ▶ when collapsed
+  toggleIcon.classList.toggle("bi-chevron-left", isOpen);
+  toggleIcon.classList.toggle("bi-chevron-right", !isOpen);
 
-    tabChevron.classList.toggle("bi-chevron-up", !isOpen);
-    tabChevron.classList.toggle("bi-chevron-down", isOpen);
-  }
+  // Chevron in the floating tab: show ▶ when collapsed
+  tabChevron.classList.toggle("bi-chevron-right", !isOpen);
+  tabChevron.classList.toggle("bi-chevron-left", isOpen);
+}
 
   function applyPanelState() {
     if (isPinned) {

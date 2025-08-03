@@ -10,21 +10,23 @@
 <body>
   <div class="app">
     <!-- HEADER -->
-    <header class="app-header">
-      <div class="header-left">
-        <img src="{{ url_for('static', filename='iitb_logo.png') }}" alt="IITB Logo" class="logo">
-        <span class="team-name">IITB Rocket Team</span>
-      </div>
-      <div class="header-right">
-        <h1 class="app-title">Hybrid Motor Simulation</h1>
-      </div>
-    </header>
+<header class="app-header">
+  <div class="header-left">
+    <h1 class="app-title">Hybrid Motor Simulation</h1>
+  </div>
+  <div class="header-right">
+    <img src="{{ url_for('static', filename='iitb_logo.png') }}" alt="IITB Logo" class="logo">
+    <span class="team-name">IITB Rocket Team</span>
+  </div>
+</header>
 
     <!-- RIBBON TOOLBAR -->
     <aside class="ribbon glass-panel" id="ribbon">
       <form method="POST">
         <div class="ribbon-header">
-          <button type="submit" class="run-button" title="Run Simulation">Run</button>
+          <button type="submit" class="run-button" title="Run Simulation">
+<i class="bi bi-rocket-takeoff" style="margin-right: 8px;"></i>Run
+</button>
           <nav class="ribbon-tabs">
             <button type="button" data-tab="tab1" class="active">Combustion</button>
             <button type="button" data-tab="tab2">Casing</button>
@@ -93,9 +95,9 @@
           {% endfor %}
         </div>
 
-        <!-- Ribbon footer with collapse chevron -->
-        <button type="button" id="collapse-btn" class="bottom-right-btn" onclick="toggleCollapse()" title="Collapse Ribbon">
-  <i id="collapse-icon" class="bi bi-chevron-up"></i>
+<!-- Ribbon footer with collapse chevron -->
+<button type="button" id="collapse-btn" class="bottom-right-btn" onclick="toggleCollapse()" title="Collapse Ribbon">
+  <i id="collapse-icon" class="bi bi-chevron-right"></i>
 </button>
 
       </form>
@@ -105,19 +107,19 @@
     <div class="main-content-below-ribbon">
 
       <!-- TAB to expand panel when collapsed -->
-      <div id="results-tab" class="results-tab">
-        <i class="bi bi-chevron-up" title="Show Results"></i>
-      </div>
+<div id="results-tab" class="results-tab">
+  <i class="bi bi-chevron-right" title="Show Results"></i>
+</div>
 
       <!-- RESULTS PANEL -->
-      <aside id="results-panel" class="results glass-panel">
-        <div class="results-header">
-          <span class="results-header-title">Simulation Results</span>
-          <div class="results-controls">
-            <i id="results-pin" class="bi bi-pin-angle-fill" title="Pin/Unpin Panel"></i>
-            <i id="results-toggle" class="bi bi-chevron-down" title="Collapse/Expand Results"></i>
-          </div>
-        </div>
+<aside id="results-panel" class="results glass-panel">
+  <div class="results-header">
+    <span class="results-header-title">Simulation Results</span>
+    <div class="results-controls">
+      <i id="results-pin" class="bi bi-pin-angle-fill" title="Pin/Unpin Panel"></i>
+      <i id="results-toggle" class="bi bi-chevron-left" title="Collapse/Expand Results"></i>
+    </div>
+  </div>
 
         {% if summary %}
           <div id="results-summary" class="results-summary">
@@ -127,7 +129,8 @@
                 <ul class="results-list">
                   {% for label, value in metrics.items() %}
                     <li class="results-item">
-                      <span class="label">{{ label }}</span>: <span class="value">{{ value }}</span>
+                      <span class="label">{{ label }}</span> 
+                      <span class="value">{{ value }}</span>
                     </li>
                   {% endfor %}
                 </ul>
@@ -145,7 +148,7 @@
       <!-- FIGURE CANVAS -->
       <main class="canvas">
         {% if plot_keys %}
-          <h2 class="section-title">Figures</h2>
+          <h2 class="section-title">Useful Plots and Visualisations</h2>
           {% for key in plot_keys %}
             <figure class="viz-figure glass-panel">
               <img src="{{ url_for('serve_plot', key=key) }}" alt="{{key}}">

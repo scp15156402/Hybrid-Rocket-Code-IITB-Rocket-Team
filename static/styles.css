@@ -714,7 +714,7 @@
   font-weight: var(--font-weight-bold);
   font-size: 1.125rem;        /* ~18px */
   color: var(--color-text);
-  margin-bottom: var(--space-2);
+  margin-bottom: 8px;
   line-height: 1.2;
   letter-spacing: 0.02em;
 }
@@ -731,49 +731,105 @@
 /* ======================
    Range Slider (Sleek Track)
    ====================== */
+/* === Base Track === */
 input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;                /* Slim but visible */
-  background: var(--color-border);
-  border-radius: var(--radius-full);
-  outline: none;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-/* Firefox track */
-input[type="range"]::-moz-range-track {
-  background: var(--color-border);
   height: 4px;
-  border-radius: var(--radius-full);
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
 }
 
-/* Thumb (Interactive) */
+/* === WebKit Track === */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+/* === Firefox Track === */
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+
+/* === Edge/IE Track === */
+input[type="range"]::-ms-track {
+  height: 4px;
+  background: transparent;
+  border-color: transparent;
+  color: transparent;
+}
+
+/* === Default Thumb (WebKit) === */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 14px;
   height: 14px;
+  margin-top: -5px;
   background: var(--color-primary);
+  border: 2px solid white;
   border-radius: 50%;
   box-shadow: var(--shadow-xs);
   transition: background 0.2s, transform 0.1s;
 }
-input[type="range"]:hover::-webkit-slider-thumb {
-  background: var(--color-primary-hover);
+
+/* === Hover / Active / Focus (WebKit) === */
+input[type="range"]:hover::-webkit-slider-thumb,
+input[type="range"]:focus::-webkit-slider-thumb,
+input[type="range"]:active::-webkit-slider-thumb {
+  background: var(--color-primary);
   transform: scale(1.2);
 }
+
+/* === Default Thumb (Firefox) === */
 input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
   background: var(--color-primary);
-  border: none;
+  border: 2px solid white;
   border-radius: 50%;
   box-shadow: var(--shadow-xs);
   transition: background 0.2s, transform 0.1s;
 }
+
+/* === Hover / Active / Focus (Firefox) === */
+input[type="range"]:hover::-moz-range-thumb,
+input[type="range"]:focus::-moz-range-thumb,
+input[type="range"]:active::-moz-range-thumb {
+  background: var(--color-primary);
+  transform: scale(1.2);
+}
+
+/* === Default Thumb (Edge/IE) === */
+input[type="range"]::-ms-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--color-primary);
+  border: 2px solid white;
+  border-radius: 50%;
+  transition: background 0.2s, transform 0.1s;
+}
+
+/* === Hover / Active / Focus (Edge/IE) === */
+input[type="range"]:hover::-ms-thumb,
+input[type="range"]:focus::-ms-thumb,
+input[type="range"]:active::-ms-thumb {
+  background: var(--color-primary);
+}
+
+/* === Spacing === */
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input[type="range"] {
+  margin-bottom: 1rem;
+}
+
 
 /* ======================
    Number Input (Clean Box)

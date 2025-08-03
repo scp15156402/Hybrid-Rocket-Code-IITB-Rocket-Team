@@ -165,5 +165,26 @@
   <script src="{{ url_for('static', filename='js/ribbon.js') }}"></script>
   <script src="{{ url_for('static', filename='js/results-panel.js') }}"></script>
   <script src="{{ url_for('static', filename='js/header-particles.js') }}"></script>
+  <script>
+  function updateSliderTrack(slider) {
+    const min = slider.min ? parseFloat(slider.min) : 0;
+    const max = slider.max ? parseFloat(slider.max) : 100;
+    const value = parseFloat(slider.value);
+
+    const percent = ((value - min) / (max - min)) * 100;
+
+    slider.style.background = `linear-gradient(to right, var(--color-primary) 0%, var(--color-primary) ${percent}%, var(--color-border) ${percent}%, var(--color-border) 100%)`;
+  }
+
+  // Attach to all sliders on load
+  document.addEventListener('DOMContentLoaded', () => {
+    const sliders = document.querySelectorAll('input[type="range"]');
+    sliders.forEach(slider => {
+      updateSliderTrack(slider);
+      slider.addEventListener('input', () => updateSliderTrack(slider));
+    });
+  });
+</script>
+
 </body>
 </html>

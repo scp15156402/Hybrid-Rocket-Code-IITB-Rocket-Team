@@ -20,7 +20,7 @@
   <button id="dark-mode-toggle" class="dark-mode-toggle" title="Toggle Dark Mode">
     <i id="dark-mode-icon" class="bi bi-moon"></i>
   </button>
-  <img src="{{ url_for('static', filename='iitb_logo.png') }}" alt="IITB Logo" class="logo">
+  <img src="{{ url_for('static', filename='iitb_logo.png') }}" alt="IITB Logo" class="logo no-invert">
   <span class="team-name">IITB Rocket Team</span>
 </div>
 
@@ -169,6 +169,40 @@
   <script src="{{ url_for('static', filename='js/results-panel.js') }}"></script>
   <script src="{{ url_for('static', filename='js/header-particles.js') }}"></script>
   <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const toggleButton = document.getElementById("dark-mode-toggle");
+    const darkIcon = document.getElementById("dark-mode-icon");
+
+    const lightLink = document.getElementById("light-style");
+    const darkLink = document.getElementById("dark-style");
+
+    function applyTheme(theme) {
+      if (theme === "dark") {
+        darkLink.disabled = false;
+        lightLink.disabled = true;
+        darkIcon.className = "bi bi-sun";
+      } else {
+        darkLink.disabled = true;
+        lightLink.disabled = false;
+        darkIcon.className = "bi bi-moon";
+      }
+      localStorage.setItem("color-scheme", theme);
+    }
+
+    // Toggle on click
+    toggleButton.addEventListener("click", () => {
+      const currentTheme = darkLink.disabled ? "light" : "dark";
+      const nextTheme = currentTheme === "light" ? "dark" : "light";
+      applyTheme(nextTheme);
+    });
+
+    // On page load, use saved theme or default to light
+    const stored = localStorage.getItem("color-scheme") || "light";
+    applyTheme(stored);
+  });
+</script>
+
   <script>
   function updateSliderTrack(slider) {
     const min = slider.min ? parseFloat(slider.min) : 0;

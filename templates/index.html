@@ -6,6 +6,7 @@
   <title>Hybrid Motor Simulation</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link id="dark-style" rel="stylesheet" href="{{ url_for('static', filename='dark-styles.css') }}" disabled>
 </head>
 <body>
   <div class="app">
@@ -15,10 +16,14 @@
   <div class="header-left">
     <h1 class="app-title">Hybrid Motor Simulation</h1>
   </div>
-  <div class="header-right">
-    <img src="{{ url_for('static', filename='iitb_logo.png') }}" alt="IITB Logo" class="logo">
-    <span class="team-name">IITB Rocket Team</span>
-  </div>
+<div class="header-right">
+  <button id="dark-mode-toggle" class="dark-mode-toggle" title="Toggle Dark Mode">
+    <i id="dark-mode-icon" class="bi bi-moon"></i>
+  </button>
+  <img src="{{ url_for('static', filename='iitb_logo.png') }}" alt="IITB Logo" class="logo">
+  <span class="team-name">IITB Rocket Team</span>
+</div>
+
 </header>
 
     <!-- RIBBON TOOLBAR -->
@@ -163,6 +168,7 @@
   <script src="{{ url_for('static', filename='js/ribbon.js') }}"></script>
   <script src="{{ url_for('static', filename='js/results-panel.js') }}"></script>
   <script src="{{ url_for('static', filename='js/header-particles.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dark-mode.js') }}"></script>
   <script>
   function updateSliderTrack(slider) {
     const min = slider.min ? parseFloat(slider.min) : 0;

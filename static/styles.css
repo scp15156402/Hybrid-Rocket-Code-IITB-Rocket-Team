@@ -1243,3 +1243,20 @@ input[type="number"]:focus-visible {
 *::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-blue-700); /* Darker blue on hover */
 }
+
+/* ========================
+   Dark Mode Toggle
+   ======================== */
+
+.dark-mode-toggle {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  margin-right: 16px;
+  color: var(--color-foreground);
+}
+.dark-mode-toggle:hover {
+  color: var(--color-accent);
+}
+

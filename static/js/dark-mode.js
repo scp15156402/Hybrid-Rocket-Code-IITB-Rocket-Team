@@ -1,79 +1,76 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const toggleButton = document.getElementById('dark-mode-toggle');
-  const icon = document.getElementById('dark-mode-icon');
+// static/js/dark-mode.js
+document.addEventListener("DOMContentLoaded", function() {
+  const toggleButton = document.getElementById("dark-mode-toggle");
+  const darkIcon = document.getElementById("dark-mode-icon");
+  const lightLink = document.getElementById("light-style");
+  const darkLink = document.getElementById("dark-style");
   const html = document.documentElement;
 
-  // Add transition styles globally
-  const transitionStyles = `
+  // Add smooth transitions
+  const styleSheet = document.createElement("style");
+  styleSheet.textContent = `
     .theme-transition * {
-      transition: background-color 0.3s ease,
+      transition: background-color 0.3s ease, 
+                  color 0.3s ease, 
                   border-color 0.3s ease,
-                  color 0.3s ease,
-                  box-shadow 0.3s ease !important,
+                  box-shadow 0.3s ease,
                   filter 0.3s ease !important;
     }
   `;
-  const styleSheet = document.createElement('style');
-  styleSheet.textContent = transitionStyles;
   document.head.appendChild(styleSheet);
 
-  const savedTheme = localStorage.getItem('darkMode');
-  const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  let isDark = savedTheme !== null ? savedTheme === 'true' : systemPrefersDark;
-
-  applyTheme(isDark, false);
-
-  // Listen to system preference changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    if (localStorage.getItem('darkMode') === null) {
-      applyTheme(e.matches, true);
-    }
-  });
-
-  toggleButton.addEventListener('click', () => {
-    const currentlyDark = html.getAttribute('data-color-scheme') === 'dark';
-    const nextState = !currentlyDark;
-    applyTheme(nextState, true);
-    localStorage.setItem('darkMode', String(nextState));
-  });
-
-  function applyTheme(darkMode, withTransition = true) {
+  function applyTheme(theme, withTransition = true) {
+    const isDark = theme === "dark";
+    
     if (withTransition) {
-      html.classList.add('theme-transition');
-      setTimeout(() => html.classList.remove('theme-transition'), 300);
+      html.classList.add("theme-transition");
+      setTimeout(() => html.classList.remove("theme-transition"), 300);
     }
 
-    html.setAttribute('data-color-scheme', darkMode ? 'dark' : 'light');
-
-    if (icon) {
-      icon.className = darkMode ? 'bi bi-sun' : 'bi bi-moon';
-      icon.setAttribute('aria-label', darkMode ? 'Switch to light mode' : 'Switch to dark mode');
+    // Toggle stylesheets
+    if (darkLink && lightLink) {
+      darkLink.disabled = !isDark;
+      lightLink.disabled = isDark;
     }
 
-    updateMetaThemeColor(darkMode);
-    recolorImagesToMatchTheme(darkMode);
+    // Set data attribute for CSS variable fallback
+    html.setAttribute("data-color-scheme", theme);
+
+    // Update icon
+    if (darkIcon) {
+      darkIcon.className = isDark ? "bi bi-sun" : "bi bi-moon";
+      darkIcon.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+    }
+
+    // Update meta theme color
+    updateMetaThemeColor(isDark);
+    
+    // Recolor images if needed
+    recolorImagesToMatchTheme(isDark);
   }
 
   function updateMetaThemeColor(isDark) {
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (!metaThemeColor) {
-      metaThemeColor = document.createElement('meta');
-      metaThemeColor.name = 'theme-color';
+      metaThemeColor = document.createElement("meta");
+      metaThemeColor.name = "theme-color";
       document.head.appendChild(metaThemeColor);
     }
-    metaThemeColor.content = isDark ? '#0f172a' : '#ffffff';
+    metaThemeColor.content = isDark ? "#0f172a" : "#ffffff";
   }
 
   function recolorImagesToMatchTheme(darkMode) {
     const bg = [38, 40, 40]; // RGB of #262828
-    const threshold = 240;   // anything > this is "white-ish"
+    const threshold = 240;
 
     document.querySelectorAll('img:not(.no-invert)').forEach(img => {
       const original = img.dataset.originalSrc || img.src;
 
       if (!darkMode) {
-        img.src = original;
-        img.classList.remove('processed');
+        if (img.dataset.originalSrc) {
+          img.src = original;
+          img.classList.remove("processed");
+        }
         return;
       }
 
@@ -82,12 +79,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (img.classList.contains('processed')) return;
+      if (img.classList.contains("processed")) return;
 
       img.dataset.originalSrc = original;
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
       ctx.drawImage(img, 0, 0);
@@ -108,12 +105,32 @@ document.addEventListener('DOMContentLoaded', () => {
           data[i+1] = 255 - g;
           data[i+2] = 255 - b;
         }
-        // alpha unchanged
       }
 
       ctx.putImageData(imageData, 0, 0);
       img.src = canvas.toDataURL();
-      img.classList.add('processed');
+      img.classList.add("processed");
     });
   }
+
+  // Event listeners
+  toggleButton.addEventListener("click", () => {
+    const currentTheme = darkLink.disabled ? "light" : "dark";
+    const nextTheme = currentTheme === "light" ? "dark" : "light";
+    applyTheme(nextTheme, true);
+    localStorage.setItem("color-scheme", nextTheme);
+  });
+
+  // System preference detection
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    if (!localStorage.getItem("color-scheme")) {
+      applyTheme(e.matches ? "dark" : "light", true);
+    }
+  });
+
+  // Initial load
+  const stored = localStorage.getItem("color-scheme");
+  const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const initialTheme = stored || (systemPrefersDark ? "dark" : "light");
+  applyTheme(initialTheme, false);
 });

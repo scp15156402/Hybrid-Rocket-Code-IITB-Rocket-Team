@@ -60,12 +60,25 @@
                   <label for="{{key}}">{{ slider_config[key].label }}</label>
                   <input type="range" id="{{key}}" name="{{key}}"
        min="{{slider_config[key].min}}" max="{{slider_config[key].max}}"
+       step="{{ slider_config[key].step }}"
        value="{{current_values[key]}}"
-       oninput="document.getElementById('{{key}}_val').value = this.value">
+       oninput="
+         const val = this.value;
+         const numInput = document.getElementById('{{key}}_val');
+         numInput.value = val;
+         updateSliderTrack(this);
+       ">
 
-                  <input type="number" id="{{key}}_val"
+<input type="number" id="{{key}}_val"
        value="{{current_values[key]}}"
-       onchange="document.getElementById('{{key}}').value = this.value">
+       step="any"
+       onchange="
+         val = parseFloat(this.value);
+         const slider = document.getElementById('{{key}}');
+         slider.value = val;
+         updateSliderTrack(slider);
+       ">
+
                 </div>
               {% endfor %}
               {% if tab == 'tab6' %}

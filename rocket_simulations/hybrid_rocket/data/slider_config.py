@@ -6,7 +6,7 @@ slider_config.py
 Enhanced UI configuration with clear, professional labels aligned with notebook parameters.
 """
 
-from hybrid_rocket.material_db import material_properties
+from rocket_simulations.hybrid_rocket.data.material_db import material_properties
 
 slider_config = {
     # I. Combustion Geometry & Fuel Parameters

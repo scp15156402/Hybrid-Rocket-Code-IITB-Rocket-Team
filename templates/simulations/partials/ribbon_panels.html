@@ -1,0 +1,13 @@
+<div class="ribbon-panels">
+  {% for tab_id, tab_meta in rocket_tabs.items() %}
+    <section id="{{ tab_id }}" class="ribbon-panel {% if loop.first %}active{% endif %}">
+      {% for key in tab_meta.fields %}
+        {% if slider_config.get(key) %}
+          {% include 'simulations/partials/slider.html' with key=key %}
+        {% elif dropdown_config.get(key) %}
+          {% include 'simulations/partials/dropdown.html' with key=key %}
+        {% endif %}
+      {% endfor %}
+    </section>
+  {% endfor %}
+</div>

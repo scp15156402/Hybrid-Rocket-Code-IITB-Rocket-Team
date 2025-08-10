@@ -10,10 +10,14 @@ Includes structural analysis, propellant consumption, and all missing metrics.
 
 import pandas as pd
 import numpy as np
-from hybrid_rocket.constants import GRAVITY
-from hybrid_rocket.structure import fuel_mass_from_geometry
-from hybrid_rocket.combustion import n2o_liquid_density, n2o_pressure
-from hybrid_rocket.material_db import get_material_properties
+from rocket_simulations.hybrid_rocket.data.constants import (
+    GRAVITY, R_UNIVERSAL, GAMMA, M_EXHAUST, R_SPECIFIC, P_AMBIENT,
+    REG_A, REG_N, OF_DATA, T_COMBUSTION_DATA, PRESSURE_SPLINE, DENSITY_SPLINE
+)
+
+from rocket_simulations.hybrid_rocket.logic.structure import fuel_mass_from_geometry
+from rocket_simulations.hybrid_rocket.logic.combustion import n2o_liquid_density, n2o_pressure
+from rocket_simulations.hybrid_rocket.data.material_db import get_material_properties
 
 
 def export_simulation_data(results: dict, filename: str = "simulation_results.csv"):

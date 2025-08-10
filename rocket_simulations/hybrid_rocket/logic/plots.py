@@ -17,7 +17,7 @@ import numpy as np
 
 from io import BytesIO
 from flask_caching import Cache
-from hybrid_rocket.geometry import nozzle_profile_coords
+from rocket_simulations.hybrid_rocket.logic.geometry import nozzle_profile_coords
 
 # Where on disk to dump static images
 PLOTS_DIR = os.path.join(os.getcwd(), "static", "plots")

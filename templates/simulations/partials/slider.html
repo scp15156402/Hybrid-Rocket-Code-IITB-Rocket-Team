@@ -1,0 +1,10 @@
+<div class="form-group">
+  <label for="{{key}}">{{ slider_config[key].label }}</label>
+  <input type="range" id="{{key}}" name="{{key}}"
+         min="{{slider_config[key].min}}" max="{{slider_config[key].max}}"
+         step="{{ slider_config[key].step }}"
+         value="{{current_values[key]}}"
+         oninput="document.getElementById('{{key}}_val').value = this.value; updateSliderTrack(this)">
+  <input type="number" id="{{key}}_val" value="{{current_values[key]}}" step="any"
+         onchange="document.getElementById('{{key}}').value = this.value; updateSliderTrack(document.getElementById('{{key}}'))">
+</div>

@@ -1,0 +1,12 @@
+<!-- FIGURE CANVAS -->
+<main class="canvas">
+  {% if plot_keys %}
+    <h2 class="section-title">Useful Plots and Visualisations</h2>
+    {% for key in plot_keys %}
+      <figure class="viz-figure glass-panel">
+        <img src="{{ url_for(plot_route, key=key) }}" alt="{{key}}">
+        <figcaption>Figure {{ loop.index }}. {{ key|replace('_',' ')|title }}</figcaption>
+      </figure>
+    {% endfor %}
+  {% endif %}
+</main>

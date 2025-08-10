@@ -7,15 +7,18 @@ Includes dynamic chamber pressure, N₂O tank modeling, and all missing features
 """
 
 import numpy as np
-from hybrid_rocket.geometry import port_area, update_port_radius
-from hybrid_rocket.combustion import (
+import numpy as np
+
+from rocket_simulations.hybrid_rocket.logic.geometry import port_area, update_port_radius
+from rocket_simulations.hybrid_rocket.logic.combustion import (
     regression_rate, oxidizer_flux, fuel_mass_flow_rate, of_ratio,
     get_Tc, solve_choked_pressure, exhaust_velocity, thrust_from_momentum, specific_impulse,
     n2o_liquid_density, nozzle_exit_area
 )
-from hybrid_rocket.constants import (
+from rocket_simulations.hybrid_rocket.data.constants import (
     GRAVITY, R_SPECIFIC, GAMMA, P_AMBIENT, RHO_FUEL
 )
+
 
 
 def simulate_burn(

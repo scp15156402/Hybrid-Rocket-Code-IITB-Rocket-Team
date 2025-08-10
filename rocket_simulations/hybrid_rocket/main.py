@@ -17,15 +17,15 @@ import sys
 import traceback
 from typing import Any, Dict
 
-from hybrid_rocket.solver import simulate_burn
-from hybrid_rocket.plots import save_all_plots
-from hybrid_rocket.export import (
+from rocket_simulations.hybrid_rocket.logic.solver import simulate_burn
+from rocket_simulations.hybrid_rocket.logic.plots import save_all_plots
+from rocket_simulations.hybrid_rocket.logic.export import (
     export_simulation_data,
-    print_summary,
     compute_structural_metrics,
     get_summary_dict,
 )
-from hybrid_rocket.slider_config import slider_config, dropdown_config
+from rocket_simulations.hybrid_rocket.data.slider_config import slider_config, dropdown_config
+    
 
 
 # ---------------------------
@@ -384,14 +384,11 @@ def main():
         results = run_simulation(current_values, verbose=args.verbose)
 
         # Build summary dict (try structured, fallback to print_summary string)
+        # Build summary dict (fallback just sets a default message)
         try:
             summary = get_summary_dict(results, current_values)
         except Exception:
-            try:
-                summary_text = print_summary(results, current_values)
-                summary = {"Summary": summary_text}
-            except Exception:
-                summary = {"Summary": "Could not build summary."}
+            summary = {"Summary": "Could not build summary."}
 
         # Structural checks and warnings
         warnings, struct = collect_warnings_and_struct(current_values, results)
@@ -426,7 +423,7 @@ def main():
         traceback.print_exc()
         print("\n" + note("Advice: please check your input parameters and try again."))
         sys.exit(1)
-
+    
 
 if __name__ == "__main__":
     main()

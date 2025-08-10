@@ -1,0 +1,10 @@
+<div class="ribbon-header">
+  <button type="submit" class="run-button" title="Run Simulation">
+    <i class="bi bi-rocket-takeoff" style="margin-right: 8px;"></i>Run
+  </button>
+  <nav class="ribbon-tabs">
+    {% for tab_id, tab_meta in rocket_tabs.items() %}
+      <button type="button" data-tab="{{ tab_id }}" class="{% if loop.first %}active{% endif %}">{{ tab_meta.label }}</button>
+    {% endfor %}
+  </nav>
+</div>

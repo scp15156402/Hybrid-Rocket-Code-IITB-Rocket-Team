@@ -1,4 +1,4 @@
-# hybrid_rocket/constants.py
+# rocket_simulations/hybrid_rocket/data/constants.py
 
 """
 constants.py

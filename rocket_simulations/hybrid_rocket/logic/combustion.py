@@ -11,7 +11,7 @@ Includes regression rate, mass flows, thrust, Isp, chamber pressure calculations
 import numpy as np
 from scipy.interpolate import interp1d
 from scipy.optimize import newton
-from hybrid_rocket.constants import (
+from rocket_simulations.hybrid_rocket.data.constants import (
     GRAVITY, R_UNIVERSAL, GAMMA, M_EXHAUST, R_SPECIFIC, P_AMBIENT,
     REG_A, REG_N, OF_DATA, T_COMBUSTION_DATA, PRESSURE_SPLINE, DENSITY_SPLINE
 )

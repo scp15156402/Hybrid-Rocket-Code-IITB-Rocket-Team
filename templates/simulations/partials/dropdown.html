@@ -1,0 +1,8 @@
+<div class="form-group">
+  <label for="{{key}}">{{ dropdown_config[key].label }}</label>
+  <select id="{{key}}" name="{{key}}">
+    {% for opt in dropdown_config[key].options %}
+      <option value="{{opt}}" {% if opt == current_values[key] %}selected{% endif %}>{{opt}}</option>
+    {% endfor %}
+  </select>
+</div>

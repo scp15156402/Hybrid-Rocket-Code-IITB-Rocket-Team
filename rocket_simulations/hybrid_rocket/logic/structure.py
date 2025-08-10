@@ -8,10 +8,11 @@ Extracted from integrated_code_HRM(4)_omn.ipynb (top-cell version only).
 """
 
 import numpy as np
-from hybrid_rocket.material_db import get_material_properties
-from hybrid_rocket.geometry import grain_volume
-from hybrid_rocket.constants import GRAVITY
-
+from rocket_simulations.hybrid_rocket.data.material_db import get_material_properties
+from rocket_simulations.hybrid_rocket.logic.geometry import grain_volume
+from rocket_simulations.hybrid_rocket.data.constants import (
+    GRAVITY, R_SPECIFIC, GAMMA, P_AMBIENT, RHO_FUEL
+)
 
 def mass_cylinder(d_outer: float, length: float, thickness: float, material: str) -> float:
     """

@@ -1,4 +1,4 @@
-# hybrid_rocket/material_db.py
+# rocket_simulations/hybrid_rocket/data/material_db.py
 
 """
 material_db.py

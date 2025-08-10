@@ -3,9 +3,11 @@
     <section id="{{ tab_id }}" class="ribbon-panel {% if loop.first %}active{% endif %}">
       {% for key in tab_meta.fields %}
         {% if slider_config.get(key) %}
-          {% include 'simulations/partials/slider.html' with key=key %}
+          {% set slider_key = key %}
+          {% include 'simulations/partials/slider.html' %}
         {% elif dropdown_config.get(key) %}
-          {% include 'simulations/partials/dropdown.html' with key=key %}
+          {% set dropdown_key = key %}
+          {% include 'simulations/partials/dropdown.html' %}
         {% endif %}
       {% endfor %}
     </section>

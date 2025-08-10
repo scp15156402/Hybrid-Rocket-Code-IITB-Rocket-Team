@@ -1,35 +1,33 @@
-# app.py
-
+import os
 from flask import Flask, render_template
+from flask_caching import Cache
 
-from rocket_simulations.hybrid_rocket.hybrid_app import create_app as create_hybrid_app
-from rocket_simulations.solid_rocket.solid_app import create_app as create_solid_app
-from rocket_simulations.liquid_rocket.liquid_app import create_app as create_liquid_app
+from rocket_simulations.hybrid_rocket.hybrid_app import hybrid_bp
+import rocket_simulations.hybrid_rocket.hybrid_app as hybrid_module
+from rocket_simulations.hybrid_rocket.logic.plots import init_plot_cache
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(
+    __name__,
+    static_folder=os.path.join(BASE_DIR, "static"),
+    static_url_path="/static"
+)
+
+# Configure cache
+app.config["CACHE_TYPE"] = "SimpleCache"
+app.config["CACHE_DEFAULT_TIMEOUT"] = 300
+cache = Cache(app)
+init_plot_cache(app)
+
+# Wire this cache into the hybrid_app module
+hybrid_module.cache = cache
 
 @app.route("/")
 def index():
-    """Landing page to choose rocket simulation type."""
     return render_template("index.html")
 
-# Register Hybrid rocket simulation under /hybrid_simulations
-app.register_blueprint(
-    create_hybrid_app().blueprints["hybrid"],
-    url_prefix="/hybrid_simulations"
-)
-
-# Register Solid rocket simulation under /solid
-app.register_blueprint(
-    create_solid_app().blueprints["solid"],
-    url_prefix="/solid"
-)
-
-# Register Liquid rocket simulation under /liquid
-app.register_blueprint(
-    create_liquid_app().blueprints["liquid"],
-    url_prefix="/liquid"
-)
+app.register_blueprint(hybrid_bp, url_prefix="/hybrid_simulations")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

@@ -3,10 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>{% block title %}Rocket Simulation{% endblock %}</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='simulations/css/sim_styles.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='simulations/css/sim_dark-styles.css') }}">
-
+  
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  
+  <!-- Light / Dark Stylesheets -->
+  <link id="light-style" rel="stylesheet" href="{{ url_for('static', filename='simulations/css/sim_styles.css') }}">
+  <link id="dark-style" rel="stylesheet" href="{{ url_for('static', filename='simulations/css/sim_dark-styles.css') }}" disabled>
 </head>
+
 <body>
   <div class="app">
     {% include 'simulations/partials/header.html' %}
